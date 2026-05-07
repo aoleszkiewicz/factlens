@@ -13,12 +13,22 @@ def clean_text(text: str) -> str:
     text = re.sub(r"\((?:Reuters|AP|AFP)\)", "", text)
     text = re.sub(r"\breuters\b", "", text, flags=re.IGNORECASE)
 
-    # URLs, twitter handles
+    # URLs
     text = re.sub(r"https?://\S+", "", text)
     text = re.sub(r"www\.\S+", "", text)
     text = re.sub(r"pic\.twitter\.com/\S+", "", text)
     text = re.sub(r"tmsnrt\.rs/\S+", "", text)
+
+    # Twitter/social handles (02_leakage: at_handle MI=0.076, via_handle)
+    # Remove "via @handle" before bare handle to avoid orphan "via"
+    text = re.sub(r"\bvia\s+@\w+", "", text, flags=re.IGNORECASE)
     text = re.sub(r"@\w+", "", text)
+    text = re.sub(r"@", "", text)  # bare @ remaining after handle removal
+
+    # Clickbait/video prefixes at start of text (02_leakage: video_marker MI=0.018)
+    text = re.sub(
+        r"^(?:VIDEO|WATCH|BREAKING|SHOCK)\s*[:!]\s*", "", text, flags=re.IGNORECASE
+    )
 
     # Photo/video credit templates (remove full template, keep individual words)
     text = re.sub(
@@ -34,6 +44,7 @@ def clean_text(text: str) -> str:
         flags=re.IGNORECASE,
     )
     text = re.sub(r"getty\s+images?", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"\bgetty\b", "", text, flags=re.IGNORECASE)  # standalone getty
     text = re.sub(r"(?:featured\s+)?image\s*/?\s*video", "", text, flags=re.IGNORECASE)
 
     # HTML and scraping artifacts
@@ -50,6 +61,11 @@ def clean_text(text: str) -> str:
     text = re.sub(r"\s+", " ", text)
     text = re.sub(r"\b\w\b", "", text)
     text = text.lower().strip()
+
+    # Second pass after lowercasing — catches edge cases where reuters survived
+    # (e.g., non-standard surrounding characters that foiled \b at first pass)
+    text = re.sub(r"\breuters\b", "", text)
+    text = re.sub(r"\s+", " ", text).strip()
 
     return text
 
