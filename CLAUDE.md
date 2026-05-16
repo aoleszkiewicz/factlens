@@ -74,4 +74,14 @@ No tests, linters, or formatters are configured yet (`tests/__init__.py` is empt
 - Notebook prose, plot titles, and wnioski must be in Polish; code stays English.
 - Don't pull in HF `tokenizers`/`transformers` for tokenization — model side will use plain Python regex/whitespace tokenization + GloVe lookup, owned in PyTorch.
 - Don't touch `notebooks/*_temp/` — those are frozen reference.
-- When rebuilding a notebook, prefer constructing the `.ipynb` JSON via a one-shot Python script over many `NotebookEdit` calls; `nbconvert --execute --inplace` is the smoke test.
+- When editing notebooks, use `NotebookEdit` (insert/replace/delete cells by id). Do not generate Python scripts to manipulate `.ipynb` files. Use `nbconvert --execute --inplace` only as a smoke test / end-to-end run.
+
+## Claude Code setup
+
+Preferred mode is **VS Code extension panel**. Available tools in this mode:
+- `NotebookEdit` — add/edit/delete notebook cells (primary tool for notebook work)
+- `Read` — inspect notebook cells and outputs
+- `Bash(uv run *)` — run scripts, nbconvert smoke tests, uv commands
+- `mcp__ide__executeCode` / `mcp__ide__getDiagnostics` — only available in integrated terminal mode, not panel; do not rely on them
+
+VS Code workspace settings are in `.vscode/settings.json` (default uv interpreter, Pylance basic mode).

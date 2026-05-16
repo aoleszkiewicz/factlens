@@ -1,21 +1,19 @@
-from pathlib import Path
 from sklearn.model_selection import train_test_split
 
 import os
 import pandas as pd
 
-RANDOM_STATE = os.environ.get("RANDOM_STATE")
+from src.paths import DATA_SPLITS
+
+RANDOM_STATE = int(os.environ.get("RANDOM_STATE", 42))
 
 
 def make_splits(
     df: pd.DataFrame,
-    output_dir="data/processed/splited",
+    output_dir=DATA_SPLITS,
     write_to_file=True,
     random_state: int = RANDOM_STATE,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    output_dir = Path(output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
-
     y = df["label"]
 
     train, test = train_test_split(
