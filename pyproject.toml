@@ -24,6 +24,12 @@ dependencies = [
 where = ["."]
 include = ["src*"]
 
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "basic"
+venvPath = "."
+venv = ".venv"
+
 [dependency-groups]
 dev = [
     "ipykernel>=7.2.0",

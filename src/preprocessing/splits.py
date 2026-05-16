@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from sklearn.model_selection import train_test_split
 
 import os
@@ -10,8 +12,8 @@ RANDOM_STATE = int(os.environ.get("RANDOM_STATE", 42))
 
 def make_splits(
     df: pd.DataFrame,
-    output_dir=DATA_SPLITS,
-    write_to_file=True,
+    output_dir: Path = DATA_SPLITS,
+    write_to_file: bool = True,
     random_state: int = RANDOM_STATE,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     y = df["label"]
@@ -27,9 +29,9 @@ def make_splits(
     )
 
     for name, split in [("train", train), ("test", test), ("val", val)]:
-        split.reset_index(drop=True)
+        split = split.reset_index(drop=True)
 
         if write_to_file:
-            split.to_parquet(output_dir / f"{name}.parquet", index=False)
+            split.to_csv(output_dir / f"{name}.csv", index=False)
 
     return (train, test, val)
