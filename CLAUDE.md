@@ -20,13 +20,15 @@ The `src/api/`, `src/frontend/`, `src/model/` packages are scaffolds — current
 
 ```
 data/raw/         True.csv, Fake.csv  (downloaded via kagglehub at runtime)
-data/processed/   news_cleaned.parquet, news_classification_profile_report.html
+data/processed/   news_cleaned.csv, news_classification_profile_report.html
+data/processed/splited/   train.csv, val.csv, test.csv  (written by make_splits)
 docs/             project brief (Polish)
 notebooks/explore/      current EDA + cleaning notebooks
 notebooks/explore_temp/ archive — read-only, do not modify
 notebooks/report/       thesis-facing report notebooks
 notebooks/report_temp/  archive — read-only, do not modify
 src/preprocessing/cleaning.py   regex-based artifact stripping + length filter
+src/preprocessing/splits.py     stratified train/val/test split helper
 ```
 
 The `*_temp/` directories are intentional historical archive from a prior iteration — keep as reference, never edit. Current work lives in `notebooks/explore/` and `notebooks/report/`.
@@ -35,13 +37,29 @@ The `*_temp/` directories are intentional historical archive from a prior iterat
 
 1. `notebooks/explore/01_eda.ipynb` — EDA on raw `True.csv`/`Fake.csv` (kagglehub download). Establishes: balance ~52/48 (Fake/Real), ~14% duplicates (almost all Fake), 95th percentile ≈ 900 słów (candidate `max_seq_len`), and the leakage signals to investigate.
 2. `notebooks/explore/02_leakage.ipynb` — chi² / MI on Reuters dateline, URL/handle markers; TF-IDF top n-grams per class; produces the regex list that feeds `src/preprocessing/cleaning.py`.
-3. `notebooks/explore/03_cleaning.ipynb` — applies `clean_text` + `filter_short_articles` based on the markers identified upstream; writes `data/processed/news_cleaned.parquet`.
-4. `notebooks/explore/04_post_cleaning.ipynb` — sanity check that markers from `02_leakage` are gone, re-runs key stats on the cleaned parquet, optional GloVe coverage check.
+3. `notebooks/explore/03_cleaning.ipynb` — applies `clean_text` + `filter_short_articles` based on the markers identified upstream; writes `data/processed/news_cleaned.csv`.
+4. `notebooks/explore/04_post_cleaning.ipynb` — sanity check that markers from `02_leakage` are gone, re-runs key stats on the cleaned CSV, optional GloVe coverage check.
 5. `notebooks/report/00_raport.ipynb` — final consolidated thesis-facing report; gathers all wnioski, decisions, and the plan dalszych prac. `01_cleaning_report.ipynb` is an older standalone cleaning report kept as reference.
 
 `src/preprocessing/cleaning.py` exposes:
 - `clean_text(text: str) -> str` — strips Reuters wire markers, dateline prefixes, URLs, `@handles`, photo-credit templates, HTML, site-specific signatures (`21st Century Wire`), single-letter tokens, then lowercases. Order matters; the upstream EDA in `notebooks/explore_temp/03_leakage_analysis.ipynb` justifies each pattern.
 - `filter_short_articles(df, min_words=10)` — drops rows after cleaning.
+
+## Type annotations
+
+Pyright is configured in `pyproject.toml` (`[tool.pyright]`, `typeCheckingMode = "basic"`). Pylance in VS Code reads this automatically — hover types and completions are driven by annotations in `src/`.
+
+**Rules:**
+- Annotate every function parameter and return type. No bare `def f(x)` — always `def f(x: T) -> R`.
+- Use Python 3.12+ built-in generics everywhere. Never import `List`, `Dict`, `Tuple`, `Optional` from `typing` — use `list[str]`, `dict[str, int]`, `tuple[int, ...]`, `X | None` instead.
+- `from __future__ import annotations` is not needed on Python 3.12+; do not add it.
+- For pandas: use `pd.DataFrame` and `pd.Series` as types (no subscript needed — stubs don't support it).
+- For `Path`: import from `pathlib`, not `os.path`.
+- Module-level constants don't need explicit annotations when the type is obvious from the literal (`RANDOM_STATE = 42` is fine), but annotate when the inferred type would be too broad.
+
+**Reference implementations** (already fully typed):
+- `src/preprocessing/cleaning.py` — `clean_text(text: str) -> str`, `filter_short_articles(df: pd.DataFrame, min_words: int) -> pd.DataFrame`
+- `src/preprocessing/splits.py` — `make_splits(df: pd.DataFrame, output_dir: Path, write_to_file: bool, random_state: int) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]`
 
 ## Commands
 
