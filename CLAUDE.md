@@ -85,7 +85,7 @@ No tests, linters, or formatters are configured yet (`tests/__init__.py` is empt
 ## External assets
 
 - **Kaggle dataset** is fetched at notebook runtime via `kagglehub.dataset_download("clmentbisaillon/fake-and-real-news-dataset")` — no manual download needed, but kagglehub credentials must be set up.
-- **GloVe 6B 300d** is *not* in the repo. Notebooks expect `data/glove/glove.6B.300d.txt` (download from https://nlp.stanford.edu/projects/glove/) and gracefully skip the coverage analysis if absent.
+- **GloVe 6B 300d** is *not* in the repo. Notebooks expect `data/glove/glove_2024_wikigiga_300d`
 
 ## When working here
 
