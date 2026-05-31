@@ -12,6 +12,7 @@ dependencies = [
     "pandas<3.0",
     "plotly>=6.7.0",
     "pyarrow>=24.0.0",
+    "ruff>=0.15.15",
     "scikit-learn>=1.8.0",
     "scipy>=1.14",
     "seaborn>=0.13",
@@ -24,15 +25,39 @@ dependencies = [
 where = ["."]
 include = ["src*"]
 
-[tool.pyright]
-pythonVersion = "3.12"
-typeCheckingMode = "basic"
-venvPath = "."
-venv = ".venv"
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes (undefined names, unused imports)
+    "I",   # isort (kolejność importów)
+    "N",   # pep8-naming
+    "UP",  # pyupgrade (nowoczesna składnia, np. list[int] zamiast List[int])
+    "ANN", # flake8-annotations (brakujące adnotacje typów)
+    "B",   # flake8-bugbear (częste błędy logiczne)
+    "SIM", # flake8-simplify (uproszczenia kodu)
+    "TCH", # flake8-type-checking (importy tylko pod TYPE_CHECKING)
+    "PL",  # pylint
+    "RUF", # ruff-specific rules
+]
+ignore = [
+    "ANN101",  # brak adnotacji dla self (zbędne)
+    "ANN102",  # brak adnotacji dla cls (zbędne)
+    "PLR0913", # too many arguments — bywa słuszne w DS
+]
+
+[tool.ruff.lint.per-file-ignores]
+"*.ipynb" = ["ANN", "T201", "PL"] # notebooki: luz na adnotacje i printy
+"tests/**" = ["ANN", "S101"]      # testy: bez adnotacji, assert dozwolony
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
 
 [dependency-groups]
-dev = [
-    "ipykernel>=7.2.0",
-    "jupyter>=1.1.1",
-    "nbconvert>=7.17.1",
-]
+dev = ["ipykernel>=7.2.0", "jupyter>=1.1.1", "nbconvert>=7.17.1"]
