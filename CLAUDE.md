@@ -6,11 +6,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Bachelor thesis (SSN — sieci neuronowe). Binary fake-news classifier on the Kaggle *Fake and Real News Dataset* (`clmentbisaillon/fake-and-real-news-dataset`). Target architecture: **BiLSTM + Attention** with **GloVe 300d** embeddings, implemented in **strict PyTorch** (no TF/Keras/JAX, no HuggingFace `Trainer`, no Lightning). Full project brief: `docs/project_description_ssn.md`.
 
-The `src/api/`, `src/frontend/`, `src/model/` packages are scaffolds — currently empty. All real work so far lives in `notebooks/` and `src/preprocessing/`.
+The `src/api/`, `src/frontend/` packages are scaffolds — currently empty. Real code lives in `notebooks/`, `src/data/` (cleaning, splits, GloVe OOV analysis) and `src/model/` (TF-IDF + LogReg baseline). The BiLSTM + Attention model is not implemented yet (`torch` is not a dependency).
 
 ## Conventions
 
 - **Label**: `1 = Real`, `0 = Fake`.
+- **File format**: one consistent format for intermediate data — **CSV** everywhere (readable diffs, simplicity, acceptable size for this dataset). Do not reintroduce Parquet; cleaning output, splits, and the baseline all read/write CSV only.
 - **Model input**: only the `text` column. `title`, `subject`, `date` are dropped — `subject` is rozłączny per klasa (czysty leakage), all Fake `date`s use a non-default format, `title` correlates stylistically with class.
 - **Language**: code, identifiers, commit messages → **English**. Notebook markdown / wnioski / plot titles / report prose → **Polish** (thesis language).
 - **Plotting**: `pd.options.plotting.backend = "plotly"` + `plotly.express`. seaborn was used in `*_temp/` archives; new code is plotly-first.
@@ -27,8 +28,10 @@ notebooks/explore/      current EDA + cleaning notebooks
 notebooks/explore_temp/ archive — read-only, do not modify
 notebooks/report/       thesis-facing report notebooks
 notebooks/report_temp/  archive — read-only, do not modify
-src/preprocessing/cleaning.py   regex-based artifact stripping + length filter
-src/preprocessing/splits.py     stratified train/val/test split helper
+src/data/cleaning.py   regex-based artifact stripping + length filter
+src/data/splits.py     stratified train/val/test split helper
+src/data/glove.py      GloVe vocab loading + OOV coverage report
+src/model/baseline.py  TF-IDF + Logistic Regression baseline (build/evaluate/top_features)
 ```
 
 The `*_temp/` directories are intentional historical archive from a prior iteration — keep as reference, never edit. Current work lives in `notebooks/explore/` and `notebooks/report/`.
@@ -36,12 +39,14 @@ The `*_temp/` directories are intentional historical archive from a prior iterat
 ## Pipeline flow
 
 1. `notebooks/explore/01_eda.ipynb` — EDA on raw `True.csv`/`Fake.csv` (kagglehub download). Establishes: balance ~52/48 (Fake/Real), ~14% duplicates (almost all Fake), 95th percentile ≈ 900 słów (candidate `max_seq_len`), and the leakage signals to investigate.
-2. `notebooks/explore/02_leakage.ipynb` — chi² / MI on Reuters dateline, URL/handle markers; TF-IDF top n-grams per class; produces the regex list that feeds `src/preprocessing/cleaning.py`.
+2. `notebooks/explore/02_leakage.ipynb` — chi² / MI on Reuters dateline, URL/handle markers; TF-IDF top n-grams per class; produces the regex list that feeds `src/data/cleaning.py`.
 3. `notebooks/explore/03_cleaning.ipynb` — applies `clean_text` + `filter_short_articles` based on the markers identified upstream; writes `data/processed/news_cleaned.csv`.
 4. `notebooks/explore/04_post_cleaning.ipynb` — sanity check that markers from `02_leakage` are gone, re-runs key stats on the cleaned CSV, optional GloVe coverage check.
-5. `notebooks/report/00_raport.ipynb` — final consolidated thesis-facing report; gathers all wnioski, decisions, and the plan dalszych prac. `01_cleaning_report.ipynb` is an older standalone cleaning report kept as reference.
+5. `notebooks/explore/05_splits.ipynb` — calls `make_splits` (from `src.data.splits`) to write stratified `train.csv`/`val.csv`/`test.csv`.
+6. `notebooks/report/00_raport.ipynb` — final consolidated thesis-facing report; gathers all wnioski and decisions.
+7. `notebooks/report/02_baseline_tfidf_lr.ipynb` — TF-IDF + Logistic Regression baseline: metrics on val/test, confusion matrix, ROC, plus LR-coefficient explainability (uses `src.model.baseline`).
 
-`src/preprocessing/cleaning.py` exposes:
+`src/data/cleaning.py` exposes:
 - `clean_text(text: str) -> str` — strips Reuters wire markers, dateline prefixes, URLs, `@handles`, photo-credit templates, HTML, site-specific signatures (`21st Century Wire`), single-letter tokens, then lowercases. Order matters; the upstream EDA in `notebooks/explore_temp/03_leakage_analysis.ipynb` justifies each pattern.
 - `filter_short_articles(df, min_words=10)` — drops rows after cleaning.
 
@@ -58,8 +63,10 @@ Pyright is configured in `pyproject.toml` (`[tool.pyright]`, `typeCheckingMode =
 - Module-level constants don't need explicit annotations when the type is obvious from the literal (`RANDOM_STATE = 42` is fine), but annotate when the inferred type would be too broad.
 
 **Reference implementations** (already fully typed):
-- `src/preprocessing/cleaning.py` — `clean_text(text: str) -> str`, `filter_short_articles(df: pd.DataFrame, min_words: int) -> pd.DataFrame`
-- `src/preprocessing/splits.py` — `make_splits(df: pd.DataFrame, output_dir: Path, write_to_file: bool, random_state: int) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]`
+- `src/data/cleaning.py` — `clean_text(text: str) -> str`, `filter_short_articles(df: pd.DataFrame, min_words: int) -> pd.DataFrame`
+- `src/data/splits.py` — `make_splits(df: pd.DataFrame, output_dir: Path, write_to_file: bool, random_state: int) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]`
+- `src/data/glove.py` — `load_glove_vocab(path: Path) -> set[str]`, `oov_report(texts: pd.Series, glove_vocab: set[str], top_n: int) -> dict[str, object]`
+- `src/model/baseline.py` — `build_baseline(...) -> Pipeline`, `evaluate(...) -> dict[str, object]`, `top_features(...) -> tuple[list, list]`
 
 ## Commands
 
