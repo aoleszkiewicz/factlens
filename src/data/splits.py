@@ -1,17 +1,15 @@
 """Module for creating train/val/test splits."""
 
-import os
 from pathlib import Path
 from typing import cast
 
 import pandas as pd
 from sklearn.model_selection import (
-    train_test_split,  # pyright: ignore[reportUnknownVariableType]
+    train_test_split,
 )
 
+from src.config import RANDOM_STATE
 from src.paths import DATA_SPLITS
-
-RANDOM_STATE = int(os.environ.get("RANDOM_STATE", "42"))
 
 
 def make_splits(
@@ -31,12 +29,12 @@ def make_splits(
     Returns:
         Tuple of (train, test, val) DataFrames with reset indices.
     """
-    _train_full, _test = train_test_split(  # pyright: ignore[reportUnknownVariableType]
+    _train_full, _test = train_test_split(
         df, test_size=0.2, stratify=df["label"], random_state=random_state
     )
     train_full = cast("pd.DataFrame", _train_full)
 
-    _train, _val = train_test_split(  # pyright: ignore[reportUnknownVariableType]
+    _train, _val = train_test_split(
         train_full,
         test_size=0.25,
         stratify=train_full["label"],
