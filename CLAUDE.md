@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Bachelor thesis (SSN — sieci neuronowe). Binary fake-news classifier on the Kaggle *Fake and Real News Dataset* (`clmentbisaillon/fake-and-real-news-dataset`). Target architecture: **BiLSTM + Attention** with **GloVe 300d** embeddings, implemented in **strict PyTorch** (no TF/Keras/JAX, no HuggingFace `Trainer`, no Lightning). Full project brief: `docs/project_description_ssn.md`.
+Bachelor thesis (SSN — sieci neuronowe). Binary fake-news classifier on the Kaggle *Fake and Real News Dataset* (`clmentbisaillon/fake-and-real-news-dataset`). Target architecture: **BiLSTM + Attention** with **GloVe 300d** embeddings, implemented in **PyTorch** (no TF/Keras/JAX — PyTorch is the model framework). HuggingFace (`transformers`, `datasets`, `tokenizers`) is permitted. Full project brief: `docs/project_description_ssn.md`.
 
 The `src/api/`, `src/frontend/` packages are scaffolds — currently empty. Real code lives in `notebooks/`, `src/data/` (cleaning, splits, GloVe OOV analysis) and `src/model/` (TF-IDF + LogReg baseline). The BiLSTM + Attention model is not implemented yet (`torch` is not a dependency).
 
@@ -14,27 +14,27 @@ The `src/api/`, `src/frontend/` packages are scaffolds — currently empty. Real
 - **File format**: one consistent format for intermediate data — **CSV** everywhere (readable diffs, simplicity, acceptable size for this dataset). Do not reintroduce Parquet; cleaning output, splits, and the baseline all read/write CSV only.
 - **Model input**: only the `text` column. `title`, `subject`, `date` are dropped — `subject` is rozłączny per klasa (czysty leakage), all Fake `date`s use a non-default format, `title` correlates stylistically with class.
 - **Language**: code, identifiers, commit messages → **English**. Notebook markdown / wnioski / plot titles / report prose → **Polish** (thesis language).
-- **Plotting**: `pd.options.plotting.backend = "plotly"` + `plotly.express`. seaborn was used in `*_temp/` archives; new code is plotly-first.
+- **Plotting**: `pd.options.plotting.backend = "plotly"` + `plotly.express`. Plotly-first throughout.
 - **Notebook hygiene**: each analytical block ends with a markdown cell starting `**Wniosek (N).**`. Keep individual notebooks focused — split rather than balloon.
 
 ## Repository layout
 
 ```
 data/raw/         True.csv, Fake.csv  (downloaded via kagglehub at runtime)
-data/processed/   news_cleaned.csv, news_classification_profile_report.html
+data/processed/   news_cleaned.csv
 data/processed/splited/   train.csv, val.csv, test.csv  (written by make_splits)
 docs/             project brief (Polish)
-notebooks/explore/      current EDA + cleaning notebooks
-notebooks/explore_temp/ archive — read-only, do not modify
+notebooks/explore/      EDA + cleaning notebooks
 notebooks/report/       thesis-facing report notebooks
-notebooks/report_temp/  archive — read-only, do not modify
+src/paths.py           repo-relative data paths (single source of truth)
 src/data/cleaning.py   regex-based artifact stripping + length filter
 src/data/splits.py     stratified train/val/test split helper
 src/data/glove.py      GloVe vocab loading + OOV coverage report
 src/model/baseline.py  TF-IDF + Logistic Regression baseline (build/evaluate/top_features)
+tests/                 pytest unit tests mirroring src/ (data/, model/)
+.pre-commit-config.yaml  ruff check + format hooks
+.github/workflows/ci.yml  CI: ruff check, ruff format --check, ty check, pytest
 ```
-
-The `*_temp/` directories are intentional historical archive from a prior iteration — keep as reference, never edit. Current work lives in `notebooks/explore/` and `notebooks/report/`.
 
 ## Pipeline flow
 
@@ -43,16 +43,16 @@ The `*_temp/` directories are intentional historical archive from a prior iterat
 3. `notebooks/explore/03_cleaning.ipynb` — applies `clean_text` + `filter_short_articles` based on the markers identified upstream; writes `data/processed/news_cleaned.csv`.
 4. `notebooks/explore/04_post_cleaning.ipynb` — sanity check that markers from `02_leakage` are gone, re-runs key stats on the cleaned CSV, optional GloVe coverage check.
 5. `notebooks/explore/05_splits.ipynb` — calls `make_splits` (from `src.data.splits`) to write stratified `train.csv`/`val.csv`/`test.csv`.
-6. `notebooks/report/00_raport.ipynb` — final consolidated thesis-facing report; gathers all wnioski and decisions.
+6. `notebooks/report/01_raport.ipynb` — final consolidated thesis-facing report; gathers all wnioski and decisions.
 7. `notebooks/report/02_baseline_tfidf_lr.ipynb` — TF-IDF + Logistic Regression baseline: metrics on val/test, confusion matrix, ROC, plus LR-coefficient explainability (uses `src.model.baseline`).
 
 `src/data/cleaning.py` exposes:
-- `clean_text(text: str) -> str` — strips Reuters wire markers, dateline prefixes, URLs, `@handles`, photo-credit templates, HTML, site-specific signatures (`21st Century Wire`), single-letter tokens, then lowercases. Order matters; the upstream EDA in `notebooks/explore_temp/03_leakage_analysis.ipynb` justifies each pattern.
+- `clean_text(text: str) -> str` — strips Reuters wire markers, dateline prefixes, URLs, `@handles`, photo-credit templates, HTML, site-specific signatures (`21st Century Wire`), single-letter tokens, then lowercases. Order matters; the upstream EDA in `notebooks/explore/02_leakage.ipynb` justifies each pattern.
 - `filter_short_articles(df, min_words=10)` — drops rows after cleaning.
 
 ## Type annotations
 
-Pyright is configured in `pyproject.toml` (`[tool.pyright]`, `typeCheckingMode = "basic"`). Pylance in VS Code reads this automatically — hover types and completions are driven by annotations in `src/`.
+Type-checked by **`ty`** and linted/formatted by **`ruff`** (both Astral; configured in `pyproject.toml` under `[tool.ty]` / `[tool.ruff]`). Run `uv run ty check src` and `uv run ruff check .` locally; CI enforces both. Editor type hints are driven by the annotations in `src/`.
 
 **Rules:**
 - Annotate every function parameter and return type. No bare `def f(x)` — always `def f(x: T) -> R`.
@@ -80,6 +80,11 @@ uv add --dev <pkg>                          # add a dev dep
 uv run python main.py                       # run the (currently stub) entrypoint
 uv run jupyter lab                          # start Jupyter against the project venv
 
+uv run pytest                               # run the unit test suite
+uv run ruff check .                         # lint
+uv run ruff format .                        # format
+uv run ty check src                         # type-check
+
 # Execute a notebook end-to-end (smoke test):
 uv run jupyter nbconvert --to notebook --execute --inplace \
     --ExecutePreprocessor.timeout=600 notebooks/explore/01_eda.ipynb
@@ -87,7 +92,7 @@ uv run jupyter nbconvert --to notebook --execute --inplace \
 
 If `uv run` fails with `Failed to parse uv.lock`, regenerate with `mv uv.lock uv.lock.bak && uv lock && uv sync`.
 
-No tests, linters, or formatters are configured yet (`tests/__init__.py` is empty; no `ruff`/`black`/`pytest` in `pyproject.toml`).
+Tooling is configured: `pytest` (suite under `tests/`), `ruff` (lint + format), and `ty` (type-check) — all in the `dev` dependency group. A `.pre-commit-config.yaml` (ruff) and a GitHub Actions workflow (`.github/workflows/ci.yml`) keep the tree green. Run `uv run pre-commit install` once to enable the hooks.
 
 ## External assets
 
@@ -97,16 +102,3 @@ No tests, linters, or formatters are configured yet (`tests/__init__.py` is empt
 ## When working here
 
 - Notebook prose, plot titles, and wnioski must be in Polish; code stays English.
-- Don't pull in HF `tokenizers`/`transformers` for tokenization — model side will use plain Python regex/whitespace tokenization + GloVe lookup, owned in PyTorch.
-- Don't touch `notebooks/*_temp/` — those are frozen reference.
-- When editing notebooks, use `NotebookEdit` (insert/replace/delete cells by id). Do not generate Python scripts to manipulate `.ipynb` files. Use `nbconvert --execute --inplace` only as a smoke test / end-to-end run.
-
-## Claude Code setup
-
-Preferred mode is **VS Code extension panel**. Available tools in this mode:
-- `NotebookEdit` — add/edit/delete notebook cells (primary tool for notebook work)
-- `Read` — inspect notebook cells and outputs
-- `Bash(uv run *)` — run scripts, nbconvert smoke tests, uv commands
-- `mcp__ide__executeCode` / `mcp__ide__getDiagnostics` — only available in integrated terminal mode, not panel; do not rely on them
-
-VS Code workspace settings are in `.vscode/settings.json` (default uv interpreter, Pylance basic mode).

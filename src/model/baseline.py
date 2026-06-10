@@ -23,7 +23,7 @@ from sklearn.metrics import (
 )
 from sklearn.pipeline import Pipeline
 
-from src.data.splits import RANDOM_STATE
+from src.config import RANDOM_STATE
 
 
 def build_baseline(
