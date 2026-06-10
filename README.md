@@ -32,8 +32,8 @@ Run the notebooks under `notebooks/explore/` in order, then `notebooks/report/`:
 3. `03_cleaning.ipynb` — applies `clean_text` + `filter_short_articles` → `data/processed/news_cleaned.csv`.
 4. `04_post_cleaning.ipynb` — sanity checks on the cleaned corpus.
 5. `05_splits.ipynb` — `make_splits` → `data/processed/splited/{train,val,test}.csv`.
-6. `report/01_raport.ipynb` — consolidated thesis report.
-7. `report/02_baseline_tfidf_lr.ipynb` — baseline metrics + explainability.
+6. `notebooks/report/01_raport.ipynb` — consolidated thesis report.
+7. `notebooks/report/02_baseline_tfidf_lr.ipynb` — baseline metrics + explainability.
 
 Reusable logic lives in `src/` (imported by the notebooks):
 
