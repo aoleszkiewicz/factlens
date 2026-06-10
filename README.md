@@ -64,7 +64,7 @@ uv run jupyter lab       # notebooks against the project venv
 ```
 
 A pre-commit hook (`uv run pre-commit install`) and a GitHub Actions workflow run
-ruff + pytest to keep the tree green.
+ruff + ty + pytest to keep the tree green.
 
 More detail: thesis brief in `docs/project_description_ssn.md`; contributor/agent
 guidance in `CLAUDE.md`.
