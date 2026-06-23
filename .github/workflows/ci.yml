@@ -19,6 +19,12 @@ jobs:
       - name: Sync dependencies
         run: uv sync --dev
 
+      # torch is not a managed dependency: locally it is a ROCm build installed
+      # by hand, so we keep it out of pyproject/uv.lock to avoid clobbering it on
+      # `uv sync`. CI runs on CPU, so install the CPU wheel explicitly here.
+      - name: Install PyTorch (CPU)
+        run: uv pip install torch --index-url https://download.pytorch.org/whl/cpu
+
       - name: Ruff lint
         run: uv run ruff check src tests
 

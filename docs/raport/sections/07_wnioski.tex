@@ -1,0 +1,39 @@
+\section{Wnioski i dalsze kroki}
+
+\subsection{Podsumowanie}
+
+\begin{itemize}[noitemsep]
+  \item \textbf{TF-IDF $\rightarrow$ MLP} to sieć neuronowa zbudowana w całości
+        od zera (bez fine-/feature-tuningu), zgodna z wymogiem przedmiotu SSN.
+        Działa na tych samych splitach, konwencji etykiet i wektoryzatorze co
+        baseline, a cała logika jest reużywalna w \texttt{src/model/mlp.py}.
+  \item Model osiąga F1 i ROC-AUC na poziomie $\sim$0{,}99 na zbiorze testowym ---
+        wynik porównywalny z baselinem (regresją logistyczną). Na tym leksykalnie
+        łatwym zbiorze sieć nie zyskuje istotnej przewagi nad modelem liniowym.
+  \item Diagnoza \textbf{bias--variance} (krzywa uczenia + sweep regularyzacji)
+        wskazuje reżim \textbf{niskiego biasu i niskiej wariancji} przy suficie
+        metryk zbioru: powiększanie modelu ani danych nie pomoże, a regularyzacja
+        jedynie domyka niewielką lukę train--val.
+  \item Przykładowe predykcje pokazują, że nieliczne błędy mają czytelne przyczyny
+        stylistyczne (teksty ,,pograniczne'' --- agencyjny styl w artykułach Fake,
+        format listy lub tematyka rozrywkowa w artykułach Real).
+\end{itemize}
+
+\subsection{Ograniczenia}
+
+Najważniejszym ograniczeniem jest \textbf{sufit metryczny} zbioru: po usunięciu
+wycieku klasy nadal różnią się na tyle silnie leksykalnie, że proste reprezentacje
+(TF-IDF) wystarczają do niemal perfekcyjnej klasyfikacji. Utrudnia to wykazanie
+przewagi bardziej złożonych architektur na tym konkretnym zbiorze. Model
+worka słów (TF-IDF) z założenia ignoruje też \textbf{kolejność i kontekst} słów.
+
+\subsection{Dalsze kroki}
+
+Etap ten dostarcza zweryfikowaną pętlę treningową PyTorcha (Adam,
+\texttt{BCEWithLogitsLoss}, early stopping, dropout, weight decay, obsługa GPU) jako
+fundament pod model docelowy pracy dyplomowej: \textbf{BiLSTM + Attention} z
+osadzeniami \textbf{GloVe~300d}. W odróżnieniu od worka słów model ten będzie
+modelował kontekst sekwencyjny, a mechanizm atencji umożliwi
+\textbf{wyjaśnialność na poziomie pojedynczego artykułu} (wizualizację wag atencji) ---
+co stanowi główną wartość merytoryczną kolejnego etapu, ważniejszą niż sam wzrost
+metryk.

@@ -1,0 +1,82 @@
+\section{Architektura modelu}
+\label{sec:arch}
+
+\subsection{Reprezentacja tekstu: TF-IDF}
+
+Tekst jest zamieniany na wektor cech metodą \textbf{TF-IDF} (\emph{Term
+Frequency--Inverse Document Frequency}). Jest to nieparametryczna inżynieria cech ---
+\emph{nie} model pretrenowany --- więc model neuronowy w całości uczy się od zera.
+Wektoryzator (\texttt{make\_tfidf\_vectorizer}, \texttt{src/model/baseline.py}) jest
+\textbf{współdzielony} z baselinem (regresją logistyczną), co zapewnia uczciwe
+porównanie obu klasyfikatorów. Jest dopasowywany \textbf{wyłącznie na zbiorze
+treningowym}, a tym samym słownikiem transformowane są val i test (brak wycieku
+ze zbiorów ewaluacyjnych). Parametry zebrano w Tabeli~\ref{tab:tfidf}.
+
+\begin{table}[H]
+  \centering
+  \caption{Konfiguracja wektoryzatora TF-IDF.}
+  \label{tab:tfidf}
+  \begin{tabular}{ll}
+    \toprule
+    \textbf{Parametr} & \textbf{Wartość} \\
+    \midrule
+    \texttt{max\_features} & 50\,000 (rozmiar słownika) \\
+    \texttt{ngram\_range}  & (1, 2) --- unigramy i bigramy \\
+    \texttt{min\_df}       & 5 (minimalna częstość dokumentowa) \\
+    \texttt{sublinear\_tf} & \texttt{True} ($1 + \log(\mathrm{tf})$) \\
+    \texttt{strip\_accents}& \texttt{"unicode"} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Sieć gęsta (MLP)}
+
+Klasyfikatorem jest wielowarstwowa sieć gęsta (\texttt{MLPClassifier},
+\texttt{src/model/mlp.py}) o architekturze:
+\[
+  \underbrace{\text{Linear}(50\,000, 256)}_{\text{warstwa ukryta}}
+  \;\rightarrow\; \text{ReLU}
+  \;\rightarrow\; \text{Dropout}(0{,}3)
+  \;\rightarrow\; \underbrace{\text{Linear}(256, 1)}_{\text{wyjście (logit)}}.
+\]
+Wyjściem jest pojedynczy \emph{logit} (bez sigmoidy), co pozwala użyć numerycznie
+stabilnej funkcji straty \texttt{BCEWithLogitsLoss}. Sieć liczy
+\textbf{12\,800\,513} parametrów --- zdecydowana większość przypada na pierwszą
+warstwę ($50\,000 \times 256$), bo wymiar wejścia równy jest rozmiarowi słownika.
+
+\subsection{Proces uczenia}
+
+Funkcja \texttt{train\_mlp} realizuje pełną pętlę treningową z \textbf{early
+stopping} monitorującym F1 na zbiorze walidacyjnym i przywracającym wagi z najlepszej
+epoki (Tabela~\ref{tab:train}). W praktyce trening zatrzymał się po \textbf{11
+epokach} (z dozwolonych 20).
+
+\begin{table}[H]
+  \centering
+  \caption{Hiperparametry uczenia.}
+  \label{tab:train}
+  \begin{tabular}{ll}
+    \toprule
+    \textbf{Parametr} & \textbf{Wartość} \\
+    \midrule
+    optymalizator        & Adam \\
+    learning rate        & $1\times10^{-3}$ \\
+    funkcja straty       & \texttt{BCEWithLogitsLoss} \\
+    rozmiar batcha        & 256 \\
+    maks. epok           & 20 \\
+    early stopping       & na F1 walidacji, \texttt{patience = 3} \\
+    dropout              & 0{,}3 \\
+    weight decay (L2)    & 0 (domyślnie; badany w sekcji~\ref{sec:eval}) \\
+    próg decyzyjny       & 0{,}5 \\
+    ziarno losowe        & \texttt{RANDOM\_STATE} (powtarzalność) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Uzasadnienie wyborów.}
+Funkcja \texttt{BCEWithLogitsLoss} łączy sigmoidę z entropią krzyżową w sposób
+numerycznie stabilny i jest naturalna dla klasyfikacji binarnej. Adam zapewnia szybką
+zbieżność bez ręcznego strojenia harmonogramu uczenia. Early stopping na F1 (a nie na
+stracie) jest spójny z metryką raportowaną i chroni przed przeuczeniem przy
+praktycznie zerowym koszcie. Dropout 0{,}3 to standardowa, umiarkowana regularyzacja
+warstwy ukrytej.

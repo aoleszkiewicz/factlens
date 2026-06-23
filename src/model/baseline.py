@@ -26,6 +26,34 @@ from sklearn.pipeline import Pipeline
 from src.config import RANDOM_STATE
 
 
+def make_tfidf_vectorizer(
+    max_features: int = 50_000,
+    ngram_range: tuple[int, int] = (1, 2),
+    min_df: int = 5,
+) -> TfidfVectorizer:
+    """Build the project's shared TF-IDF vectorizer.
+
+    Single source of truth for the TF-IDF configuration so the logistic
+    regression baseline and the MLP (``src.model.mlp``) vectorize text
+    identically — a prerequisite for a fair comparison between them.
+
+    Args:
+        max_features: Vocabulary cap for the TF-IDF vectorizer.
+        ngram_range: Lower/upper bound on n-gram size.
+        min_df: Minimum document frequency for a term to be kept.
+
+    Returns:
+        An unfitted ``TfidfVectorizer``.
+    """
+    return TfidfVectorizer(
+        max_features=max_features,
+        ngram_range=ngram_range,
+        min_df=min_df,
+        sublinear_tf=True,
+        strip_accents="unicode",
+    )
+
+
 def build_baseline(
     max_features: int = 50_000,
     ngram_range: tuple[int, int] = (1, 2),
@@ -49,12 +77,10 @@ def build_baseline(
         [
             (
                 "tfidf",
-                TfidfVectorizer(
+                make_tfidf_vectorizer(
                     max_features=max_features,
                     ngram_range=ngram_range,
                     min_df=min_df,
-                    sublinear_tf=True,
-                    strip_accents="unicode",
                 ),
             ),
             (

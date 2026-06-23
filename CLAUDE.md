@@ -6,7 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Bachelor thesis (SSN — sieci neuronowe). Binary fake-news classifier on the Kaggle *Fake and Real News Dataset* (`clmentbisaillon/fake-and-real-news-dataset`). Target architecture: **BiLSTM + Attention** with **GloVe 300d** embeddings, implemented in **PyTorch** (no TF/Keras/JAX — PyTorch is the model framework). HuggingFace (`transformers`, `datasets`, `tokenizers`) is permitted. Full project brief: `docs/project_description_ssn.md`.
 
-The `src/api/`, `src/frontend/` packages are scaffolds — currently empty. Real code lives in `notebooks/`, `src/data/` (cleaning, splits, GloVe OOV analysis) and `src/model/` (TF-IDF + LogReg baseline). The BiLSTM + Attention model is not implemented yet (`torch` is not a dependency).
+The `src/api/`, `src/frontend/` packages are scaffolds — currently empty. Real code lives in `notebooks/`, `src/data/` (cleaning, splits, GloVe OOV analysis) and `src/model/` (TF-IDF + LogReg baseline; TF-IDF → MLP neural net). The first **from-scratch** neural network is the **TF-IDF → MLP** in `src/model/mlp.py` (PyTorch). The BiLSTM + Attention model is not implemented yet.
+
+**PyTorch / `torch` is intentionally NOT a managed dependency** (not in `pyproject.toml`/`uv.lock`). Locally it is a hand-installed **ROCm** build, so adding it as a managed dep would clobber that install on `uv sync`. Install it yourself (locally: the ROCm wheel; CPU-only: `uv pip install torch --index-url https://download.pytorch.org/whl/cpu`). CI installs the CPU wheel in a dedicated step (`.github/workflows/ci.yml`). Device handling is automatic via `src.model.mlp.resolve_device` (`torch.cuda.is_available()` is `True` for ROCm too).
 
 ## Conventions
 
@@ -30,7 +32,8 @@ src/paths.py           repo-relative data paths (single source of truth)
 src/data/cleaning.py   regex-based artifact stripping + length filter
 src/data/splits.py     stratified train/val/test split helper
 src/data/glove.py      GloVe vocab loading + OOV coverage report
-src/model/baseline.py  TF-IDF + Logistic Regression baseline (build/evaluate/top_features)
+src/model/baseline.py  TF-IDF + Logistic Regression baseline (make_tfidf_vectorizer/build/evaluate/top_features)
+src/model/mlp.py       TF-IDF → MLP neural net from scratch in PyTorch (MLPClassifier/train_mlp/evaluate_mlp)
 tests/                 pytest unit tests mirroring src/ (data/, model/)
 .pre-commit-config.yaml  ruff check + format hooks
 .github/workflows/ci.yml  CI: ruff check, ruff format --check, ty check, pytest
@@ -45,6 +48,9 @@ tests/                 pytest unit tests mirroring src/ (data/, model/)
 5. `notebooks/explore/05_splits.ipynb` — calls `make_splits` (from `src.data.splits`) to write stratified `train.csv`/`val.csv`/`test.csv`.
 6. `notebooks/report/01_raport.ipynb` — final consolidated thesis-facing report; gathers all wnioski and decisions.
 7. `notebooks/report/02_baseline_tfidf_lr.ipynb` — TF-IDF + Logistic Regression baseline: metrics on val/test, confusion matrix, ROC, plus LR-coefficient explainability (uses `src.model.baseline`).
+8. `notebooks/report/03_mlp_tfidf.ipynb` — TF-IDF → MLP from-scratch neural net: training curves + early stopping, metrics on val/test, confusion matrix, ROC, and a LogReg-vs-MLP comparison (uses `src.model.mlp`, same vectorizer as the baseline).
+
+`src/model/mlp.py` exposes a from-scratch PyTorch network on TF-IDF features (no fine-/feature-tuning): `TfidfDataset` (lazy densification of sparse rows), `MLPClassifier` (logits out, `BCEWithLogitsLoss`), `train_mlp` (Adam + early stopping on val-F1), `predict_proba`, `evaluate_mlp` (returns the same metric dict as `baseline.evaluate`), plus `set_seed`/`resolve_device`. It reuses `baseline.make_tfidf_vectorizer` so the two models vectorize text identically.
 
 `src/data/cleaning.py` exposes:
 - `clean_text(text: str) -> str` — strips Reuters wire markers, dateline prefixes, URLs, `@handles`, photo-credit templates, HTML, site-specific signatures (`21st Century Wire`), single-letter tokens, then lowercases. Order matters; the upstream EDA in `notebooks/explore/02_leakage.ipynb` justifies each pattern.

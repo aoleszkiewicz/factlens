@@ -1,0 +1,36 @@
+\section{Wstęp}
+
+\subsection{Problem}
+
+Automatyczne wykrywanie fałszywych wiadomości (\emph{fake-news}) to zadanie
+klasyfikacji binarnej: na podstawie treści artykułu prasowego model rozstrzyga,
+czy pochodzi on z wiarygodnego źródła (\emph{Real}), czy jest dezinformacją
+(\emph{Fake}). Trudność problemu nie leży w samym dopasowaniu klasyfikatora ---
+jak pokażemy, klasy są w tym zbiorze silnie rozróżnialne leksykalnie --- lecz w
+\textbf{rzetelnym przygotowaniu danych}: zbiór zawiera liczne sygnały wycieku
+informacji (ang. \emph{data leakage}), które pozwalają uzyskać niemal perfekcyjne
+metryki bez uczenia się treści. Większość pracy projektowej dotyczy więc
+identyfikacji i usunięcia tych sygnałów, tak by model uczył się stylu i tematyki, a
+nie artefaktów technicznych.
+
+\subsection{Cel}
+
+Celem tego etapu jest zbudowanie \textbf{pierwszej sieci neuronowej od zera}
+(bez wag pretrenowanych, bez fine-tuningu i feature-tuningu --- zgodnie z wymogiem
+przedmiotu SSN) oraz zweryfikowanie kompletnej pętli treningowej w PyTorchu
+(propagacja wsteczna, optymalizator Adam, early stopping, regularyzacja, obsługa
+GPU). Stanowi to fundament pod model docelowy pracy dyplomowej:
+\textbf{BiLSTM + Attention} z osadzeniami GloVe~300d.
+
+\subsection{Zbiór danych}
+
+Wykorzystujemy publiczny zbiór \emph{Fake and Real News Dataset} (Kaggle,
+\texttt{clmentbisaillon/fake-and-real-news-dataset}) --- dwa pliki CSV
+(\texttt{True.csv}, \texttt{Fake.csv}) z artykułami prasowymi w języku angielskim.
+W całym projekcie obowiązuje konwencja etykiet:
+\[
+  \texttt{1 = Real}, \qquad \texttt{0 = Fake}.
+\]
+Model operuje wyłącznie na kolumnie \texttt{text}; kolumny \texttt{title},
+\texttt{subject} i \texttt{date} są odrzucane jako źródła wycieku informacji
+(uzasadnienie w sekcji~\ref{sec:dane}).
