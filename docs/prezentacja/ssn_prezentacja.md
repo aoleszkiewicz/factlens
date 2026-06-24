@@ -3,7 +3,7 @@ marp: true
 theme: default
 paginate: true
 size: 16:9
-header: 'Klasyfikacja fake-news: TF-IDF → MLP'
+header: 'Klasyfikacja fake-news, Aleksander Oleszkiewicz, 122393'
 footer: 'Sztuczne Sieci Neuronowe'
 style: |
   section { font-size: 26px; }
@@ -18,67 +18,92 @@ style: |
 
 <!-- _class: lead -->
 # Klasyfikacja fake-news
-## Sieć neuronowa TF-IDF → MLP (od zera w PyTorchu)
 
 **Aleksander Oleszkiewicz**
-Sztuczne Sieci Neuronowe — projekt
+Sztuczne Sieci Neuronowe, projekt
 
 ---
 
 ## Problem
 
-- **Zadanie:** klasyfikacja binarna artykułów prasowych — *Real* vs *Fake*.
+- **Zadanie:** klasyfikacja binarna artykułów prasowych (Real vs Fake).
 - **Konwencja:** `1 = Real`, `0 = Fake`.
 - Zbiór *Fake and Real News* (Kaggle), ~45 tys. artykułów po angielsku.
 
-> **Prawdziwa trudność nie leży w modelu, lecz w danych.**
-> Zbiór jest pełen *wycieku informacji* — można uzyskać ~100% trafności
-> nie ucząc się treści, tylko artefaktów technicznych.
-
 ---
 
-## Zbiór danych — pierwsze spojrzenie
+## Zbiór danych, pierwsze spojrzenie
 
 <div class="cols">
 <div>
 
-- **44 898** artykułów, klasy niemal zrównoważone (~52% Fake / 48% Real).
-- **~14% duplikatów** — niemal wyłącznie w klasie Fake.
+- **44 898** artykułów, klasy niemal zrównoważone (~52% Fake, 48% Real).
+- **~14% duplikatów**, niemal wyłącznie w klasie Fake (~26% tej klasy).
 - ~1,4% tekstów pustych (same odnośniki YouTube).
+- Rozkład długości prawoskośny, mediana ~370 słów dla obu klas.
 
 </div>
 <div>
 
-- Rozkład długości prawoskośny.
-- **95. percentyl ≈ 900 słów** → kandydat na `max_seq_len`
-  dla modelu sekwencyjnego.
+![w:520](../raport/figures/eda_dlugosc.png)
 
 </div>
 </div>
 
 ---
 
-## Pułapka: data leakage
+## Pułapka 1: kolumna `subject` to etykieta
 
-Informacja wzajemna (MI) demaskuje markery zdradzające klasę bez treści:
+![w:660 center](../raport/figures/leakage_subject.png)
 
-| Marker | MI [nat] | Klasa |
-|---|---|---|
-| słowo „reuters” | **0,650** | Real |
-| dateline „MIASTO (Reuters) –” | 0,456 | Real |
-| „featured image” | 0,136 | Fake |
-| `@handle` | 0,076 | Fake |
-
-- Kolumna `subject` rozdziela klasy **w 100%** → odrzucona.
-- `title`, `date` też niosą wyciek → **model używa tylko kolumny `text`**.
+<span class="small">Każda wartość `subject` należy **w 100%** do jednej klasy (`politicsNews`, `worldnews` → Real; reszta → Fake). To nie cecha, to **target pod inną nazwą**, więc kolumnę odrzucamy.</span>
 
 ---
 
-## Czyszczenie danych
+## Pułapka 2: wyciek w treści `text`
+
+<div class="cols">
+<div>
+
+![w:520](../raport/figures/leakage_markery.png)
+
+</div>
+<div>
+
+![w:520](../raport/figures/leakage_mi.png)
+
+</div>
+</div>
+
+<span class="small">Markery redakcyjne (stempel Reuters, `getty images`, `@handle`, URL-e) rozdzielają klasy bez czytania treści. Informacja wzajemna stempla Reuters to ~0,65 nat, podczas gdy sensowne markery językowe rzadko przekraczają 0,05. Te artefakty **usuwamy w czyszczeniu**.</span>
+
+---
+
+## Pułapka 3: styl `title` i format `date`
+
+<div class="cols">
+<div>
+
+![w:520](../raport/figures/leakage_title.png)
+
+</div>
+<div>
+
+- `title`: tytuły Fake to clickbait (ALL-CAPS, `VIDEO:`, znaki zapytania), Real to spójny Title Case. Model uczyłby się **stylu nagłówka**, nie treści.
+- `date`: wszystkie daty Fake mają niestandardowy format → trywialny wyciek.
+
+**Dlatego model używa wyłącznie kolumny `text`.**
+
+</div>
+</div>
+
+---
+
+## Czyszczenie i podział danych
 
 Kaskada wyrażeń regularnych (`src/data/cleaning.py`) usuwa m.in.:
-markery Reuters · URL-e · `@handle` · prefiksy clickbait · podpisy zdjęć (getty) ·
-HTML · sygnatury serwisów → normalizacja + małe litery.
+markery Reuters, URL-e, `@handle`, prefiksy clickbait, podpisy zdjęć (getty),
+HTML, sygnatury serwisów. Następnie normalizacja i małe litery.
 
 <div class="cols">
 <div>
@@ -98,44 +123,40 @@ HTML · sygnatury serwisów → normalizacja + małe litery.
 </div>
 </div>
 
-Podział **stratyfikowany** 60/20/20 → train 23 082 · val 7 694 · test 7 694.
+Podział **stratyfikowany** 60/20/20: train 23 082, val 7 694, test 7 694.
 
 ---
 
 ## Reprezentacja: TF-IDF
 
-- Tekst → wektor **TF-IDF** (1–2-gramy, `max_features=50 000`, `min_df=5`, `sublinear_tf`).
-- To **nieparametryczna inżynieria cech** — *nie* model pretrenowany.
-  → sieć uczy się w całości **od zera**.
-- Dopasowanie **tylko na train**; ten sam wektoryzator co baseline
-  → uczciwe porównanie LogReg vs MLP.
+- MLP przyjmuje wejście o **stałym rozmiarze**, a artykuły mają różną długość. TF-IDF koduje każdy dokument jako wektor o ustalonym wymiarze (słownik 50 000 termów).
+- Waga termu to **TF** (częstość w dokumencie) razy **IDF** (rzadkość w całym korpusie): słowa pospolite (`the`, `said`) są tłumione, a rzadkie i różnicujące wzmacniane. Wektor niesie więc sygnał dyskryminacyjny, nie surowe zliczenia.
+- `sublinear_tf` = log(TF) ogranicza wpływ wielokrotnych powtórzeń; bigramy (1-2-gramy) łapią proste frazy (`white house`).
+- Reprezentacja jest **rzadka i wysokowymiarowa**, więc pierwsza warstwa `Linear` uczy się ważenia cech. Kolejność i kontekst słów są pomijane (model worka słów).
+- Ten sam wektoryzator co baseline daje uczciwe porównanie LogReg vs MLP.
+
+<span class="small">Parametry: `ngram_range=(1,2)`, `max_features=50 000`, `min_df=5`, `sublinear_tf`; dopasowanie **tylko na train**.</span>
 
 ---
 
-## Architektura MLP
+## Architektura: pipeline modelu
 
-```
-TF-IDF (50 000) → Linear(50000, 256) → ReLU → Dropout(0.3) → Linear(256, 1) → logit
-```
+![w:1000 center](../raport/figures/pipeline_model.png)
 
-<div class="cols">
-<div>
+<span class="small">Pełna ścieżka inferencji: od surowego artykułu, przez czyszczenie i wektoryzację TF-IDF, do sieci MLP i prawdopodobieństwa klasy.</span>
 
-- Wyjście = **logit** (bez sigmoidy)
-  → `BCEWithLogitsLoss` (stabilne numerycznie).
-- **12 800 513** parametrów
-  (głównie pierwsza warstwa 50k × 256).
+---
 
-</div>
-<div>
+## Architektura MLP: hiperparametry
 
-- Optymalizator: **Adam**, lr = 1e-3
-- batch = 256, maks. 20 epok
-- **early stopping** na F1 (walidacja),
-  `patience = 3`, przywracanie najlepszych wag
-
-</div>
-</div>
+| Hiperparametr | Wartość |
+|---|---|
+| Funkcja straty | `BCEWithLogitsLoss` (logit na wyjściu) |
+| Optymalizator | Adam, lr = 1e-3 |
+| Rozmiar batcha / maks. epoki | 256 / 20 |
+| Early stopping | po F1 walidacji, `patience = 3`, przywrócenie najlepszych wag |
+| Regularyzacja | Dropout `p = 0,3` |
+| Liczba parametrów | **12 800 513** |
 
 ---
 
@@ -160,41 +181,13 @@ Sieć zbiega w pierwszych epokach; early stopping zatrzymał trening po **11 epo
 | **F1** | 0,9916 | **0,9877** |
 | **ROC-AUC** | 0,9992 | **0,9987** |
 
-</div>
-<div>
-
-![w:380](../raport/figures/mlp_macierz_pomylek.png)
-
-</div>
-</div>
-
-Metryki ~0,99 — praktyczny **sufit jakości** tego zbioru.
-
----
-
-## Krzywa ROC
-
-![w:560 center](../raport/figures/mlp_roc.png)
-
-Pole pod krzywą (AUC) = 0,9987 — model niemal idealnie separuje klasy.
-
----
-
-## Diagnoza bias–variance
-
-<div class="cols">
-<div>
-
-![w:480](../raport/figures/mlp_learning_curve.png)
+<span class="small">AUC 0,9987: model niemal idealnie rankinguje klasy.</span>
 
 </div>
 <div>
 
-- F1 treningowe ≈ 1,0 → **niski bias**
-- luka train–val ~0,8 pp i maleje → **niska wariancja**
-- krzywa walidacji szybko na plateau
-
-**Wniosek:** więcej danych ani większy model **nie pomogą** — jesteśmy przy suficie zbioru.
+![w:330](../raport/figures/mlp_macierz_pomylek.png)
+![w:330](../raport/figures/mlp_roc.png)
 
 </div>
 </div>
@@ -209,22 +202,29 @@ Pole pod krzywą (AUC) = 0,9987 — model niemal idealnie separuje klasy.
 | F1 | 0,9815 | **0,9877** |
 | ROC-AUC | 0,9970 | **0,9987** |
 
-- MLP lepszy o **~0,6 pp F1** — różnica marginalna.
-- Klasy niemal liniowo separowalne w TF-IDF → nieliniowość nie daje przewagi.
-- **Wartość etapu:** zweryfikowana pętla treningowa PyTorcha pod model docelowy.
+- F1: 0,9815 → 0,9877, czyli różnica ~0,006 (ok. **0,6 punktu procentowego**), marginalna.
+- Klasy są niemal liniowo separowalne w przestrzeni TF-IDF, więc nieliniowość MLP nie daje istotnej przewagi nad modelem liniowym.
 
 ---
 
-## Przykładowe predykcje
+## Diagnoza bias-variance
 
-| Fragment | Prawd. | P(Real) | Pred. | |
-|---|---|---|---|---|
-| „germany foreign minister said…” | Real | 1,0000 | Real | ✓ |
-| „patrick henningsen the longer…” | Fake | 0,0000 | Fake | ✓ |
-| „the washington post nearly third…” | Fake | 0,9998 | Real | ✗ |
-| „- below are the highlights…” | Real | 0,0015 | Fake | ✗ |
+<div class="cols">
+<div>
 
-<span class="small">Błędy mają **czytelne przyczyny**: FP — styl agencyjny w tekście Fake; FN — format listy / tematyka rozrywkowa w tekście Real.</span>
+![w:480](../raport/figures/mlp_learning_curve.png)
+
+</div>
+<div>
+
+- F1 treningowe ≈ 1,0: **brak niedouczenia** (low bias).
+- luka train-val ~1 pp i maleje ze wzrostem zbioru: **brak istotnego przeuczenia** (low variance).
+- krzywa walidacji szybko wchodzi na plateau.
+
+**Wniosek:** na tym zbiorze model nie wykazuje ani niedouczenia, ani przeuczenia.
+
+</div>
+</div>
 
 ---
 
@@ -232,22 +232,19 @@ Pole pod krzywą (AUC) = 0,9987 — model niemal idealnie separuje klasy.
 
 ![w:620 center](../raport/figures/logreg_cechy.png)
 
-<span class="small">Real: `said`, `on wednesday`, `president donald` · Fake: `via`, `read more`, `watch`, `video`. **Żaden** usunięty marker wycieku nie wraca — model uczy się stylu, nie stempla.</span>
+<span class="small">Real: `said`, `on wednesday`, `president donald`. Fake: `via`, `read more`, `watch`, `video`. **Żaden** usunięty marker wycieku nie wraca: model uczy się stylu, nie stempla.</span>
 
 ---
 
-## Wnioski i dalszy krok
+## Wnioski
 
-- Pierwsza **sieć od zera** w projekcie: TF-IDF → MLP, F1/AUC ~0,99 na teście.
-- Na tym zbiorze sieć dorównuje modelowi liniowemu — reżim **low bias / low variance**, sufit metryk.
-- Zbudowana i zweryfikowana **pętla treningowa PyTorcha**: Adam, BCEWithLogitsLoss, early stopping, dropout, weight decay, GPU (ROCm).
-
-> **Następny etap:** BiLSTM + Attention z GloVe 300d — modelowanie kontekstu
-> i **wyjaśnialność przez wagi atencji** na poziomie pojedynczego artykułu.
+- Model **TF-IDF → MLP** osiąga F1 i ROC-AUC ~0,99 na zbiorze testowym.
+- Na tym zbiorze sieć dorównuje modelowi liniowemu: reżim low bias / low variance, metryki przy suficie zbioru (klasy niemal liniowo separowalne w przestrzeni TF-IDF).
+- Kluczowy wniosek: o wyniku decyduje **rzetelne przygotowanie danych** (eliminacja wycieku), a nie złożoność modelu; po usunięciu artefaktów model uczy się stylu, nie stempli.
 
 ---
 
 <!-- _class: lead -->
 # Dziękuję za uwagę
 
-Pytania?
+**Aleksander Oleszkiewicz**
