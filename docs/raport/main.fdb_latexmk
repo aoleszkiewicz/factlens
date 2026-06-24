@@ -1,5 +1,5 @@
 # Fdb version 4
-["pdflatex"] 1782292155.93203 "main.tex" "main.pdf" "main" 1782292156.80263 0
+["pdflatex"] 1782293027.62446 "main.tex" "main.pdf" "main" 1782293028.44533 0
   "/etc/texmf/web2c/texmf.cnf" 1772918111.94866 475 c0e671620eb5563b2130f56340a5fde8 ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/jknappen/ec/ecrm1095.tfm" 1136768653 3584 929cdff2b7a8c11bd4d49fd68cb0ae70 ""
@@ -157,10 +157,10 @@
   "figures/mlp_learning_curve.png" 1782242749.70476 87355 5a8394b6db417835888db8cd37a41b5e ""
   "figures/mlp_macierz_pomylek.png" 1782242749.70476 67033 99053de249ae0fdae72fc6afac3cac75 ""
   "figures/mlp_roc.png" 1782242749.70476 89022 5288d8f8720a421ddd5f0a3709e78ac9 ""
-  "main.aux" 1782292156.73201 8912 36873a93631361cb185e3309e806743e "pdflatex"
-  "main.out" 1782292156.73301 5028 3cac580ceacc1bafcf50a89f4cdfbc0e "pdflatex"
-  "main.tex" 1782292134.83061 2981 e37632cd073e714c52d510a32cd5eb79 ""
-  "main.toc" 1782292156.73343 2798 df9b63850f97686b18f9610e0bb1503e "pdflatex"
+  "main.aux" 1782293028.37596 8870 98fc0fb1fe3bdff11b95f8463596dbc3 "pdflatex"
+  "main.out" 1782293028.37596 5028 3cac580ceacc1bafcf50a89f4cdfbc0e "pdflatex"
+  "main.tex" 1782293015.87894 2769 4849b9faa346978335d611a7120c20cb ""
+  "main.toc" 1782293028.37721 2798 df9b63850f97686b18f9610e0bb1503e "pdflatex"
   "sections/01_wstep.tex" 1782291861.41548 1818 5c8b05711eba610635da832470a63c77 ""
   "sections/02_dane.tex" 1782291811.39 4786 3aa110d44eabf06960976827ba009d1e ""
   "sections/03_architektura.tex" 1782291893.94638 3497 03ac468cb1d5e670482ccbccda1e1186 ""
