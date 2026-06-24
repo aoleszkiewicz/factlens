@@ -3,7 +3,7 @@
 
 \subsection{Metryki na walidacji i teście}
 
-Model oceniamy pięcioma metrykami (Tabela~\ref{tab:metrics}). Wszystkie utrzymują się
+Model oceniono pięcioma metrykami (Tabela~\ref{tab:metrics}). Wszystkie utrzymują się
 na poziomie $\sim$0{,}99, co dla tego zbioru oznacza praktyczny sufit jakości.
 
 \begin{table}[H]
@@ -67,23 +67,25 @@ wyników izoluje wpływ samej architektury klasyfikatora (Tabela~\ref{tab:compar
   \end{tabular}
 \end{table}
 
-MLP przewyższa baseline o ok.\ 0{,}6~pp F1 --- różnica marginalna. Na tym leksykalnie
+MLP przewyższa baseline o ok.\ 0{,}6~pp F1 (różnica marginalna). Na tym leksykalnie
 łatwym zbiorze klasy są niemal liniowo separowalne w przestrzeni TF-IDF, więc
-nieliniowość sieci nie daje istotnej przewagi. Wartością tego etapu jest nie wzrost
-metryk, lecz zweryfikowana pętla treningowa w PyTorchu.
+nieliniowość sieci nie daje istotnej przewagi. Wartością tego modelu jest nie sam
+wzrost metryk, lecz kompletna, zweryfikowana pętla treningowa w PyTorchu oraz
+rzetelna eliminacja wycieku danych.
 
-\subsection{Diagnoza bias--variance}
+\subsection{Diagnoza bias-variance}
 
 Krzywa uczenia (trening na rosnących podzbiorach 10--100\% przy ustalonym
 wektoryzatorze) izoluje wpływ liczby przykładów. Obie krzywe F1 leżą wysoko i blisko
 siebie (Tabela~\ref{tab:lc}, Rys.~\ref{fig:lc}): F1 treningowe $\approx$1{,}0
-(\textbf{niski bias}), a luka train--val maleje do $\sim$0{,}8~pp wraz z liczbą
-przykładów (\textbf{niska wariancja}). Krzywa walidacyjna szybko wchodzi na plateau ---
-dokładanie danych nie podniesie metryki.
+(\textbf{niski bias}), a luka train-val maleje do $\sim$0{,}8~pp wraz z liczbą
+przykładów (\textbf{niska wariancja}). Krzywa walidacyjna szybko wchodzi na plateau,
+co sugeruje, że dokładanie danych przyniosłoby co najwyżej marginalną poprawę na tym
+zbiorze.
 
 \begin{table}[H]
   \centering
-  \caption{Krzywa uczenia --- F1 vs liczba przykładów treningowych.}
+  \caption{Krzywa uczenia: F1 vs liczba przykładów treningowych.}
   \label{tab:lc}
   \begin{tabular}{cccc}
     \toprule
@@ -101,7 +103,7 @@ dokładanie danych nie podniesie metryki.
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.72\textwidth]{figures/mlp_learning_curve.png}
-  \caption{Krzywa uczenia. Obie krzywe wysoko i blisko siebie --- reżim
+  \caption{Krzywa uczenia. Obie krzywe wysoko i blisko siebie: reżim
   niskiego biasu i niskiej wariancji przy suficie metryk zbioru.}
   \label{fig:lc}
 \end{figure}
@@ -110,11 +112,11 @@ dokładanie danych nie podniesie metryki.
 
 Choć przeuczenie jest tu łagodne, model umożliwia jego kontrolę trzema technikami:
 early stopping (zawsze aktywny), dropout i weight decay (L2). Tabela~\ref{tab:reg}
-pokazuje wpływ na lukę train--val (miarę wariancji).
+pokazuje wpływ na lukę train-val (miarę wariancji).
 
 \begin{table}[H]
   \centering
-  \caption{Wpływ regularyzacji na lukę train--val F1.}
+  \caption{Wpływ regularyzacji na lukę train-val F1.}
   \label{tab:reg}
   \begin{tabular}{lccc}
     \toprule
@@ -129,7 +131,7 @@ pokazuje wpływ na lukę train--val (miarę wariancji).
 \end{table}
 
 Dropout i weight decay zmniejszają lukę (obniżają F1 treningowe, podtrzymując
-walidacyjne), lecz F1 walidacyjne ledwie drga --- przy tak łatwym zbiorze
+walidacyjne), lecz F1 walidacyjne ledwie drga; przy tak łatwym zbiorze
 regularyzacja głównie kosmetyzuje lukę, a nie poprawia uogólnienia. Potwierdza to
 diagnozę z krzywej uczenia.
 
@@ -137,10 +139,10 @@ diagnozę z krzywej uczenia.
 
 Współczynniki regresji logistycznej (baseline) dają tanią, globalną wyjaśnialność
 (Rys.~\ref{fig:cechy}). Stronę Real ciągną zwroty agencyjno-sprawozdawcze
-(\texttt{said}, \texttt{on wednesday}, \texttt{president donald}), stronę Fake ---
+(\texttt{said}, \texttt{on wednesday}, \texttt{president donald}), a stronę Fake
 zwroty potoczne/clickbaitowe (\texttt{via}, \texttt{read more}, \texttt{you},
 \texttt{watch}, \texttt{video}). Co istotne, \emph{żaden} z usuniętych markerów
-wycieku nie pojawia się na liście --- model uczy się stylu i tematu, a nie stempla
+wycieku nie pojawia się na liście, więc model uczy się stylu i tematu, a nie stempla
 redakcyjnego.
 
 \begin{figure}[H]

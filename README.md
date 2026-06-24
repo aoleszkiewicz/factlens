@@ -1,7 +1,7 @@
 # factlens
 
 Binary **fake-news classifier** on the Kaggle *Fake and Real News Dataset*
-(`clmentbisaillon/fake-and-real-news-dataset`). BSc thesis (SSN — sieci neuronowe).
+(`clmentbisaillon/fake-and-real-news-dataset`). Course project (SSN — sieci neuronowe).
 Target architecture: **BiLSTM + Attention** with **GloVe 300d** embeddings, in strict
 PyTorch. A **TF-IDF + Logistic Regression** baseline is already implemented.
 
@@ -32,7 +32,7 @@ Run the notebooks under `notebooks/explore/` in order, then `notebooks/report/`:
 3. `03_cleaning.ipynb` — applies `clean_text` + `filter_short_articles` → `data/processed/news_cleaned.csv`.
 4. `04_post_cleaning.ipynb` — sanity checks on the cleaned corpus.
 5. `05_splits.ipynb` — `make_splits` → `data/processed/splited/{train,val,test}.csv`.
-6. `notebooks/report/01_raport.ipynb` — consolidated thesis report.
+6. `notebooks/report/01_raport.ipynb` — consolidated project report.
 7. `notebooks/report/02_baseline_tfidf_lr.ipynb` — baseline metrics + explainability.
 
 Reusable logic lives in `src/` (imported by the notebooks):
@@ -66,5 +66,5 @@ uv run jupyter lab       # notebooks against the project venv
 A pre-commit hook (`uv run pre-commit install`) and a GitHub Actions workflow run
 ruff + ty + pytest to keep the tree green.
 
-More detail: thesis brief in `docs/project_description_ssn.md`; contributor/agent
+More detail: project brief in `docs/project_description_ssn.md`; contributor/agent
 guidance in `CLAUDE.md`.

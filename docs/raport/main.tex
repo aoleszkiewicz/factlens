@@ -6,6 +6,10 @@
 \usepackage{lmodern}
 \usepackage[polish]{babel}
 
+% --- Matematyka ---
+\usepackage{amsmath}
+\usepackage{amssymb}
+
 % --- Grafika, tabele, układ ---
 \usepackage{graphicx}
 \usepackage{booktabs}
@@ -16,7 +20,7 @@
 \usepackage{enumitem}
 
 % --- Kod źródłowy ---
-\usepackage{xcolor}
+\usepackage{xcolor} 
 \usepackage{listings}
 \definecolor{codekw}{RGB}{0,90,160}
 \definecolor{codecomment}{RGB}{110,110,110}
@@ -47,7 +51,7 @@
 \usepackage[hidelinks]{hyperref}
 
 \title{\textbf{Klasyfikacja fake-news: sieć neuronowa TF-IDF $\rightarrow$ MLP}\\[0.3em]
-\large Dokumentacja techniczna --- Sztuczne Sieci Neuronowe}
+\large Dokumentacja techniczna, Sztuczne Sieci Neuronowe}
 \author{Aleksander Oleszkiewicz}
 \date{\today}
 
@@ -56,14 +60,14 @@
 \maketitle
 \begin{abstract}
 \noindent
-Dokument opisuje pierwszą sieć neuronową budowaną od zera w ramach projektu pracy
-dyplomowej --- binarny klasyfikator fałszywych wiadomości oparty na reprezentacji
-\textbf{TF-IDF} i wielowarstwowej sieci gęstej (\textbf{MLP}) w PyTorchu. Omawiamy
+Dokument stanowi pełną dokumentację techniczną końcowego modelu projektu,
+czyli binarnego klasyfikatora fałszywych wiadomości opartego na reprezentacji
+\textbf{TF-IDF} i wielowarstwowej sieci gęstej (\textbf{MLP}) zbudowanej od zera
+w PyTorchu. Omówiono
 analizę i czyszczenie danych (w tym eliminację wycieku informacji), architekturę i
-proces uczenia modelu, metryki ewaluacji wraz z diagnozą bias--variance, kluczowe
+proces uczenia modelu, metryki ewaluacji wraz z diagnozą bias-variance, kluczowe
 komponenty kodu oraz przykładowe predykcje. Model osiąga F1 i ROC-AUC na poziomie
-$\sim$0{,}99 na zbiorze testowym, stanowiąc zweryfikowany fundament pod docelowy
-model BiLSTM + Attention.
+$\sim$0{,}99 na zbiorze testowym.
 \end{abstract}
 
 \tableofcontents

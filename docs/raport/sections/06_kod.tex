@@ -2,9 +2,9 @@
 \label{sec:kod}
 
 Cała logika modelu jest wydzielona do \texttt{src/model/mlp.py} i pokryta testami
-jednostkowymi (\texttt{tests/model/}). Poniżej omawiamy najistotniejsze fragmenty.
+jednostkowymi (\texttt{tests/model/}). Poniżej omówiono najistotniejsze fragmenty.
 
-\subsection{\texttt{TfidfDataset} --- leniwa densyfikacja}
+\subsection{\texttt{TfidfDataset}: leniwa densyfikacja}
 
 Macierz TF-IDF jest rzadka (50\,000 kolumn, lecz nieliczne niezerowe wartości w
 wierszu). Gęste zmaterializowanie całego korpusu naraz byłoby kosztowne pamięciowo,
@@ -17,11 +17,11 @@ def __getitem__(self, index: int) -> tuple[torch.Tensor, torch.Tensor]:
     return torch.from_numpy(row), self.labels[index]
 \end{lstlisting}
 
-\subsection{\texttt{MLPClassifier} --- sieć zwracająca logity}
+\subsection{\texttt{MLPClassifier}: sieć zwracająca logity}
 
 Sieć budowana jest jako stos bloków \texttt{Linear $\to$ ReLU $\to$ Dropout},
 zakończony pojedynczą warstwą liniową. \texttt{forward} zwraca surowe \emph{logity}
-(bez sigmoidy) --- co pozwala użyć numerycznie stabilnej \texttt{BCEWithLogitsLoss}
+(bez sigmoidy), co pozwala użyć numerycznie stabilnej \texttt{BCEWithLogitsLoss}
 w treningu, a \texttt{torch.sigmoid} dopiero przy wnioskowaniu.
 
 \begin{lstlisting}[caption={Konstrukcja warstw \texttt{MLPClassifier}.}]
@@ -36,12 +36,13 @@ layers.append(nn.Linear(in_features, 1))
 self.net = nn.Sequential(*layers)
 \end{lstlisting}
 
-\subsection{\texttt{train\_mlp} --- pętla treningowa z early stopping}
+\subsection{\texttt{train\_mlp}: pętla treningowa z early stopping}
 
 Pętla naprzemiennie trenuje (\texttt{\_train\_one\_epoch}) i waliduje
 (\texttt{\_validate}, zwraca stratę i F1). Po każdej epoce, jeśli F1 walidacji
-poprawił się, zapamiętujemy stan wag; w przeciwnym razie zliczamy epoki bez poprawy i
-przerywamy po przekroczeniu \texttt{patience}. Na końcu przywracamy najlepsze wagi.
+poprawił się, zapisywany jest stan wag; w przeciwnym razie zliczane są epoki bez
+poprawy, a po przekroczeniu \texttt{patience} trening zostaje przerwany. Na końcu
+przywracane są najlepsze wagi.
 
 \begin{lstlisting}[caption={Rdzeń early stopping w \texttt{train\_mlp}.}]
 optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
@@ -70,7 +71,7 @@ if best_state:
 $P(\text{Real})$ jako tablicę \texttt{numpy} (logit $\to$ \texttt{sigmoid}).
 \texttt{evaluate\_mlp} owija to w obliczenie metryk i zwraca \emph{dokładnie taki
 sam słownik} (\texttt{accuracy}, \texttt{precision}, \texttt{recall}, \texttt{f1},
-\texttt{roc\_auc}, \texttt{confusion\_matrix}) co \texttt{baseline.evaluate} --- dzięki
+\texttt{roc\_auc}, \texttt{confusion\_matrix}) co \texttt{baseline.evaluate}, dzięki
 czemu porównanie obu modeli jest bezpośrednie.
 
 \subsection{Reprodukowalność i urządzenie}
@@ -79,5 +80,5 @@ czemu porównanie obu modeli jest bezpośrednie.
 \texttt{resolve\_device} automatycznie wybiera GPU, gdy jest dostępne (na maszynie
 deweloperskiej działa build ROCm, dla którego \texttt{torch.cuda.is\_available()}
 zwraca \texttt{True}). Oba modele korzystają z tego samego wektoryzatora
-(\texttt{baseline.make\_tfidf\_vectorizer}) --- to gwarantuje identyczną reprezentację
+(\texttt{baseline.make\_tfidf\_vectorizer}), co gwarantuje identyczną reprezentację
 tekstu i uczciwe porównanie architektur.

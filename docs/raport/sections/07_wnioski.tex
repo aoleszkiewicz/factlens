@@ -7,16 +7,18 @@
         od zera (bez fine-/feature-tuningu), zgodna z wymogiem przedmiotu SSN.
         Działa na tych samych splitach, konwencji etykiet i wektoryzatorze co
         baseline, a cała logika jest reużywalna w \texttt{src/model/mlp.py}.
-  \item Model osiąga F1 i ROC-AUC na poziomie $\sim$0{,}99 na zbiorze testowym ---
-        wynik porównywalny z baselinem (regresją logistyczną). Na tym leksykalnie
+  \item Model osiąga F1 i ROC-AUC na poziomie $\sim$0{,}99 na zbiorze testowym,
+        co jest wynikiem porównywalnym z baselinem (regresją logistyczną). Na tym leksykalnie
         łatwym zbiorze sieć nie zyskuje istotnej przewagi nad modelem liniowym.
-  \item Diagnoza \textbf{bias--variance} (krzywa uczenia + sweep regularyzacji)
+  \item Diagnoza \textbf{bias-variance} (krzywa uczenia + sweep regularyzacji)
         wskazuje reżim \textbf{niskiego biasu i niskiej wariancji} przy suficie
-        metryk zbioru: powiększanie modelu ani danych nie pomoże, a regularyzacja
-        jedynie domyka niewielką lukę train--val.
-  \item Przykładowe predykcje pokazują, że nieliczne błędy mają czytelne przyczyny
-        stylistyczne (teksty ,,pograniczne'' --- agencyjny styl w artykułach Fake,
-        format listy lub tematyka rozrywkowa w artykułach Real).
+        metryk zbioru: powiększanie modelu ani zbioru przyniosłoby co najwyżej
+        marginalną poprawę, a regularyzacja jedynie domyka niewielką lukę train-val.
+  \item Przykładowe predykcje ujawniają, że model jest \textbf{przepewny}:
+        prawdopodobieństwa są nasycone na krańcach również przy pomyłkach (słaba
+        kalibracja mimo wysokiego ROC-AUC). Nieliczne błędy dotyczą tekstów
+        stylistycznie ,,pogranicznych'' (agencyjny styl w artykułach Fake, format
+        listy lub tematyka rozrywkowa w artykułach Real).
 \end{itemize}
 
 \subsection{Ograniczenia}
@@ -29,11 +31,10 @@ worka słów (TF-IDF) z założenia ignoruje też \textbf{kolejność i kontekst
 
 \subsection{Dalsze kroki}
 
-Etap ten dostarcza zweryfikowaną pętlę treningową PyTorcha (Adam,
-\texttt{BCEWithLogitsLoss}, early stopping, dropout, weight decay, obsługa GPU) jako
-fundament pod model docelowy pracy dyplomowej: \textbf{BiLSTM + Attention} z
-osadzeniami \textbf{GloVe~300d}. W odróżnieniu od worka słów model ten będzie
-modelował kontekst sekwencyjny, a mechanizm atencji umożliwi
-\textbf{wyjaśnialność na poziomie pojedynczego artykułu} (wizualizację wag atencji) ---
-co stanowi główną wartość merytoryczną kolejnego etapu, ważniejszą niż sam wzrost
-metryk.
+Projekt dostarcza zweryfikowaną pętlę treningową PyTorcha (Adam,
+\texttt{BCEWithLogitsLoss}, early stopping, dropout, weight decay, obsługa GPU) oraz
+kompletny, reużywalny kod modelu w \texttt{src/model/mlp.py}. Naturalnym kierunkiem
+dalszego rozwoju, poza zakresem niniejszego projektu, jest architektura
+\textbf{BiLSTM + Attention} z osadzeniami \textbf{GloVe~300d}: w odróżnieniu od worka
+słów modelowałaby kontekst sekwencyjny, a mechanizm atencji umożliwiłby
+\textbf{wyjaśnialność na poziomie pojedynczego artykułu} (wizualizację wag atencji).

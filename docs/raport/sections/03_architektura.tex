@@ -4,8 +4,8 @@
 \subsection{Reprezentacja tekstu: TF-IDF}
 
 Tekst jest zamieniany na wektor cech metodą \textbf{TF-IDF} (\emph{Term
-Frequency--Inverse Document Frequency}). Jest to nieparametryczna inżynieria cech ---
-\emph{nie} model pretrenowany --- więc model neuronowy w całości uczy się od zera.
+Frequency--Inverse Document Frequency}). Jest to nieparametryczna inżynieria cech
+(\emph{nie} model pretrenowany), więc model neuronowy w całości uczy się od zera.
 Wektoryzator (\texttt{make\_tfidf\_vectorizer}, \texttt{src/model/baseline.py}) jest
 \textbf{współdzielony} z baselinem (regresją logistyczną), co zapewnia uczciwe
 porównanie obu klasyfikatorów. Jest dopasowywany \textbf{wyłącznie na zbiorze
@@ -21,7 +21,7 @@ ze zbiorów ewaluacyjnych). Parametry zebrano w Tabeli~\ref{tab:tfidf}.
     \textbf{Parametr} & \textbf{Wartość} \\
     \midrule
     \texttt{max\_features} & 50\,000 (rozmiar słownika) \\
-    \texttt{ngram\_range}  & (1, 2) --- unigramy i bigramy \\
+    \texttt{ngram\_range}  & (1, 2): unigramy i bigramy \\
     \texttt{min\_df}       & 5 (minimalna częstość dokumentowa) \\
     \texttt{sublinear\_tf} & \texttt{True} ($1 + \log(\mathrm{tf})$) \\
     \texttt{strip\_accents}& \texttt{"unicode"} \\
@@ -41,7 +41,7 @@ Klasyfikatorem jest wielowarstwowa sieć gęsta (\texttt{MLPClassifier},
 \]
 Wyjściem jest pojedynczy \emph{logit} (bez sigmoidy), co pozwala użyć numerycznie
 stabilnej funkcji straty \texttt{BCEWithLogitsLoss}. Sieć liczy
-\textbf{12\,800\,513} parametrów --- zdecydowana większość przypada na pierwszą
+\textbf{12\,800\,513} parametrów, z czego zdecydowana większość przypada na pierwszą
 warstwę ($50\,000 \times 256$), bo wymiar wejścia równy jest rozmiarowi słownika.
 
 \subsection{Proces uczenia}

@@ -10,15 +10,15 @@ Surowy zbiór liczy \textbf{44\,898} artykułów o niemal zrównoważonych klasa
 \begin{itemize}[noitemsep]
   \item \textbf{Duplikaty}: ok. 13{,}9\% artykułów to dokładne duplikaty tekstu,
         skupione niemal wyłącznie w klasie Fake (ok. 25{,}7\% artykułów Fake vs
-        1{,}1\% Real). Brak konfliktów etykiet między klasami --- deduplikacja jest bezpieczna.
+        1{,}1\% Real). Brak konfliktów etykiet między klasami, zatem deduplikacja jest bezpieczna.
   \item \textbf{Puste / bardzo krótkie teksty}: ok. 1{,}4\% rekordów (głównie wpisy
         Fake zawierające jedynie odnośnik do YouTube).
 \end{itemize}
 
 Po pełnym potoku czyszczenia i deduplikacji pozostaje \textbf{38\,470} artykułów
 (Fake: 17\,281 = 44{,}9\%, Real: 21\,189 = 55{,}1\%). Rozkład długości tekstu jest
-silnie prawoskośny; 95.~percentyl to ok. \textbf{900 słów} --- wartość przyjęta jako
-kandydat na \texttt{max\_seq\_len} w docelowym modelu sekwencyjnym.
+silnie prawoskośny; 95.~percentyl to ok. \textbf{900 słów}, co bywa istotne przy
+ewentualnym rozszerzeniu o model sekwencyjny (kandydat na \texttt{max\_seq\_len}).
 
 \subsection{Wyciek informacji (data leakage)}
 
@@ -49,12 +49,12 @@ to artefakty redakcyjno-techniczne, a nie cechy treści: nagłówek agencyjny
 Wniosek z analizy: kolumna \texttt{subject} rozdziela klasy w 100\% (każda kategoria
 należy w całości do jednej klasy), a \texttt{title} oraz \texttt{date} również niosą
 silny wyciek (Fake: 83\% tytułów ALL-CAPS; daty Fake w niestandardowym formacie).
-Wszystkie trzy kolumny są więc odrzucane --- model korzysta wyłącznie z \texttt{text}.
+Wszystkie trzy kolumny są więc odrzucane, a model korzysta wyłącznie z \texttt{text}.
 
 \subsection{Czyszczenie tekstu}
 
 Funkcja \texttt{clean\_text} (\texttt{src/data/cleaning.py}) stosuje uporządkowaną
-kaskadę wyrażeń regularnych --- każdy wzorzec ma uzasadnienie w analizie MI powyżej.
+kaskadę wyrażeń regularnych, w której każdy wzorzec ma uzasadnienie w analizie MI powyżej.
 Kolejność operacji jest istotna (np.\ usunięcie ,,via @handle'' przed samym
 \texttt{@handle}, rozdzielenie ,,2017World'' przed sprowadzeniem do małych liter):
 
