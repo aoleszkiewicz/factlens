@@ -178,30 +178,60 @@
   @media (max-width: 900px) { .A .cols { grid-template-columns: 1fr; } .A .rail { position: static; } }
 
   /* ---------- variant B ---------- */
-  .B .head { display: flex; justify-content: space-between; align-items: baseline; gap: 20px; flex-wrap: wrap; margin-bottom: 18px; }
-  .B .cols { display: grid; grid-template-columns: 420px minmax(0,1fr); gap: 36px; align-items: start; }
-  .B .findings { display: grid; gap: 0; border: 1px solid var(--rule); border-radius: 10px; background: var(--panel); overflow: hidden; }
-  .B .findings header { padding: 14px 16px; border-bottom: 1px solid var(--rule); }
+  .B .head { display: flex; justify-content: space-between; align-items: baseline; gap: 20px; flex-wrap: wrap; margin-bottom: 14px; }
+  .B .masthead { border-bottom: 1px solid var(--rule); padding-bottom: 20px; margin-bottom: 22px; }
+  .B .calib-strip { display: grid; grid-template-columns: minmax(0,220px) minmax(0,1fr); gap: 22px; align-items: start; margin-top: 16px; }
+  .B .dots { display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; }
+  .B .dots span { aspect-ratio: 1; border-radius: 2px; background: var(--rule); }
+  .B .dots span.on { background: var(--toward); }
+  .B .calib-text { font-size: 14.5px; color: var(--ink-soft); margin: 0; max-width: 64ch; }
+  .B .calib-text strong { color: var(--ink); }
+  .B .calib-links { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 12px; }
+  .B .calib-links details.disc { margin-top: 0; }
+  .B .cols { display: grid; grid-template-columns: 430px minmax(0,1fr); gap: 36px; align-items: start; }
+  .B .panel-stack { display: grid; gap: 18px; position: sticky; top: 18px; }
+  .B .findings { border: 1px solid var(--rule); border-radius: 10px; background: var(--panel); overflow: hidden; }
+  .B .findings > header { padding: 14px 16px; border-bottom: 1px solid var(--rule); }
   .B .findings h2 { margin: 0; font-size: 15px; }
-  .B .findings p.sub { margin: 4px 0 0; font-size: 13px; color: var(--ink-faint); }
+  .B .findings p.sub { margin: 5px 0 0; font-size: 13px; color: var(--ink-faint); }
+  .B .navbar { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-bottom: 1px solid var(--rule-soft); background: #f8f8f4; font-size: 13px; color: var(--ink-faint); }
+  .B .navbar button { background: #fff; border: 1px solid var(--rule); border-radius: 5px; padding: 3px 9px; color: var(--ink); }
+  .B .navbar button:disabled { opacity: .4; cursor: default; }
+  .B .navbar .pos { margin-left: auto; font-variant-numeric: tabular-nums; }
+  .B .navbar kbd { font: 11px ui-monospace, Menlo, monospace; border: 1px solid var(--rule); border-bottom-width: 2px; border-radius: 3px; padding: 0 4px; background: #fff; }
+  .B .group { border-bottom: 1px solid var(--rule-soft); }
+  .B .group:last-child { border-bottom: 0; }
+  .B .group > h3 {
+    margin: 0; padding: 11px 16px 7px; font-size: 12px; letter-spacing: .07em;
+    text-transform: uppercase; color: var(--ink-faint); display: flex; align-items: center; gap: 8px;
+  }
+  .B .group > h3 .swatch { width: 22px; height: 0; border-top: 3px solid var(--toward); display: inline-block; }
+  .B .group.away > h3 .swatch { border-top-style: dotted; border-top-color: var(--away); }
+  .B .group > p.note { margin: 0; padding: 0 16px 10px; font-size: 12.5px; color: var(--ink-faint); max-width: 46ch; }
   .B ol.list { list-style: none; margin: 0; padding: 0; }
-  .B ol.list li { border-bottom: 1px solid var(--rule-soft); }
+  .B ol.list li { border-top: 1px solid var(--rule-soft); }
   .B ol.list button.item {
-    display: grid; grid-template-columns: 22px 1fr; gap: 12px; width: 100%; text-align: left;
-    background: none; border: 0; padding: 12px 16px; color: inherit;
+    display: grid; grid-template-columns: 24px 1fr; gap: 12px; width: 100%; text-align: left;
+    background: none; border: 0; padding: 11px 16px; color: inherit; border-left: 3px solid transparent;
   }
   .B ol.list button.item:hover { background: #f6f6f2; }
-  .B ol.list button.item[aria-pressed="true"] { background: #f1eef8; }
-  .B .rank { color: var(--ink-faint); font-size: 13px; padding-top: 2px; }
+  .B ol.list button.item[aria-pressed="true"] { background: #f1eef8; border-left-color: var(--toward); }
+  .B .group.away ol.list button.item[aria-pressed="true"] { background: #eaf2f5; border-left-color: var(--away); }
+  .B .rank { color: var(--ink-faint); font-size: 13px; padding-top: 3px; font-variant-numeric: tabular-nums; }
   .B .span-text { font-family: Georgia, serif; font-size: 15px; }
-  .B .bar { margin-top: 7px; height: 6px; background: var(--rule-soft); border-radius: 3px; position: relative; }
-  .B .bar i { position: absolute; top: 0; bottom: 0; border-radius: 3px; }
-  .B .bar i.toward { background: var(--toward); left: 50%; }
-  .B .bar i.away { background: var(--away); right: 50%; }
+  .B .bar { margin-top: 7px; height: 6px; background: var(--rule-soft); border-radius: 3px; overflow: hidden; }
+  .B .bar i { display: block; height: 100%; border-radius: 3px; }
+  .B .bar i.toward { background: var(--toward); }
+  .B .bar i.away { background: var(--away); }
   .B .bar-meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-faint); margin-top: 4px; }
+  .B .waiting { padding: 18px 16px; margin: 0; color: var(--ink-faint); font-size: 14px; }
+  .B .waiting em { color: var(--ink-soft); font-style: normal; display: block; margin-top: 8px; font-size: 13px; }
+  .B .balance { padding: 12px 16px; font-size: 13px; color: var(--ink-soft); background: #f8f8f4; border-top: 1px solid var(--rule-soft); }
   .B .reader { border: 1px solid var(--rule); border-radius: 10px; background: var(--panel); padding: 24px 28px; }
-  .B .reader mark.sel { box-shadow: 0 0 0 3px #d9cff0; border-radius: 3px; }
-  @media (max-width: 980px) { .B .cols { grid-template-columns: 1fr; } }
+  .B .reader mark.sel { background: #e6dcf7; box-shadow: 0 0 0 2px #e6dcf7; border-radius: 2px; }
+  .B .reader mark.sel.away-sel { background: #dceaf0; box-shadow: 0 0 0 2px #dceaf0; }
+  .B .reader mark.head { scroll-margin-block: 90px; }
+  @media (max-width: 980px) { .B .cols { grid-template-columns: 1fr; } .B .panel-stack { position: static; } }
 
   /* ---------- variant C ---------- */
   .C .sheet { max-width: 760px; margin: 0 auto; }
@@ -305,18 +335,23 @@ const TOKENS = ARTICLE.split(/(\s+)/).filter(s => s.length).map((raw, i) => {
   return { raw, ws: false, w, i };
 });
 
-/* Contiguous spans of consecutive high-|w| tokens, ranked — variant B's primary object. */
-function topSpans(limit) {
+/* Contiguous spans of consecutive high-|w| tokens, ranked — variant B's primary object.
+   Split by sign: a reader skimming one mixed list reads every row as an accusation. */
+function spansBySign(sign, limit) {
   const words = TOKENS.filter(t => !t.ws);
   const spans = [];
   for (let i = 0; i < words.length; i++) {
-    if (Math.abs(words[i].w) < .33) continue;
+    const w = words[i].w;
+    if (Math.abs(w) < .33 || Math.sign(w) !== sign) continue;
     const start = Math.max(0, i - 3), end = Math.min(words.length, i + 4);
-    const text = words.slice(start, end).map(t => t.raw).join(" ");
-    spans.push({ text, w: words[i].w, head: words[i].raw, idx: words[i].i });
+    spans.push({ text: words.slice(start, end).map(t => t.raw).join(" "), w, idx: words[i].i });
     i += 3;
   }
   return spans.sort((a, b) => Math.abs(b.w) - Math.abs(a.w)).slice(0, limit);
+}
+function topSpans(limit) {
+  return [...spansBySign(1, limit), ...spansBySign(-1, limit)]
+    .sort((a, b) => Math.abs(b.w) - Math.abs(a.w)).slice(0, limit);
 }
 
 /* ============================ bands ============================ */
@@ -368,7 +403,7 @@ const LABEL_GAP = "The model was trained on the reputation of the publisher an a
 
 /* ============================ simulated arrival ============================ */
 
-const state = { score: .78, mode: "complete", igStep: 32, timer: null, selectedSpan: null, tab: "text" };
+const state = { score: .78, mode: "complete", igStep: 32, timer: null, selectedSpan: null, scrollPending: false, tab: "text" };
 const IG_STEPS = 32;
 
 function replay() {
@@ -440,14 +475,17 @@ function cls(w) {
   return (w > 0 ? "t" : "a") + lvl;
 }
 
-function articleHTML(withAttr, selectedIdx) {
+function articleHTML(withAttr, selection, heads) {
   let out = "";
   for (const t of TOKENS) {
     if (t.ws) { out += t.raw.includes("\n\n") ? "</p><p>" : esc(t.raw); continue; }
     const c = withAttr ? cls(t.w) : null;
     if (!c) { out += esc(t.raw); continue; }
-    const sel = selectedIdx !== null && Math.abs(t.i - selectedIdx) <= 3 ? " sel" : "";
-    out += `<mark class="tok ${c}${sel}" tabindex="0" title="${t.w > 0 ? "toward unreliable" : "away from unreliable"} · ${t.w.toFixed(2)}">${esc(t.raw)}</mark>`;
+    const inSel = selection && Math.abs(t.i - selection.idx) <= 3;
+    const sel = inSel ? (selection.w > 0 ? " sel" : " sel away-sel") : "";
+    const isHead = heads && heads.has(t.i);
+    const attrs = isHead ? ` id="tok-${t.i}" class="tok ${c}${sel} head"` : ` class="tok ${c}${sel}"`;
+    out += `<mark${attrs} tabindex="0" title="${t.w > 0 ? "toward unreliable" : "away from unreliable"} \u00b7 ${t.w.toFixed(2)}">${esc(t.raw)}</mark>`;
   }
   return "<p>" + out + "</p>";
 }
@@ -524,45 +562,133 @@ function VariantA() {
 
 /* ============================ variant B — findings panel ============================ */
 /* The ranked passages are the primary object; the article is reference material beside them.
-   Structurally the opposite of A: you work a list, you do not read a page. */
+   Structurally the opposite of A: you work a list, you do not read a page.
+
+   Enhanced after the first round picked B:
+     - the calibration strip and the 43.5% caveat sit in the masthead, unprompted (FR-17)
+     - the list drives the reader: click, prev/next, j/k, scroll-to-span
+     - toward / away are separate sections, so no row can be skimmed as an accusation
+     - the inconclusive band gets its own framing rather than reusing the "worth checking" one
+     - nothing is listed until Integrated Gradients finishes: it makes every attribution valid
+       at once, so a partially-filled ranking would be a lie about what is known. */
 VariantB.title = "Findings panel";
+
+const B_FRAMING = {
+  check: {
+    h: "Passages that moved the score",
+    sub: "Ranked by how far each shifted it. These are patterns in wording — not claims the model believes are false.",
+    toward: "Wording that resembles how low-editorial-standard publications write. Resemblance, not falsehood.",
+    away: "Wording that resembles sourced, hedged reporting. The model weighed these in the other direction."
+  },
+  inconclusive: {
+    h: "What the model attended to",
+    sub: "The score landed in the wide middle band, so these two lists roughly cancelled each other out. Read this as a map of what caught the model's attention, not as a case against the text.",
+    toward: "Pulled toward the unreliable end — but not far enough to carry the assessment.",
+    away: "Pulled the other way by a comparable amount. That balance is why the band is inconclusive."
+  },
+  reliable: {
+    h: "What the model attended to",
+    sub: "Nothing here was flagged. These passages carried the most weight in either direction, shown so you can see what the assessment was actually built on.",
+    toward: "The strongest pull toward the unreliable end — weak in absolute terms.",
+    away: "Wording that resembles sourced, hedged reporting."
+  }
+};
+
+function bCalibStripHTML(score) {
+  const n = Math.round(score * 100);
+  const dots = Array.from({ length: 100 }, (_, i) => `<span class="${i < n ? "on" : ""}"></span>`).join("");
+  return `<div class="calib-strip">
+    <div class="dots" aria-hidden="true">${dots}</div>
+    <div>
+      <p class="calib-text">On the validation split, about <strong class="num">${n} in 100</strong> texts scored near
+        this level came from a publisher labelled unreliable — and in a hand-check of that corpus, only
+        <strong class="num">43.5%</strong> of articles from those publishers were clearly non-credible. The model was
+        trained on <strong>who published a text</strong>, not on whether it is true.</p>
+      <div class="calib-links">
+        ${scoreDisclosureHTML(score)}
+        ${labelGapHTML(false)}
+      </div>
+    </div>
+  </div>`;
+}
+
+function bGroupHTML(spans, sign, framing, offset) {
+  const label = sign > 0 ? "Toward \u201Cunreliable\u201D" : "Away from \u201Cunreliable\u201D";
+  const rows = spans.map((sp, i) => `
+    <li><button class="item" data-span="${sp.idx}" data-w="${sp.w}"
+        aria-pressed="${state.selectedSpan && state.selectedSpan.idx === sp.idx}">
+      <span class="rank">${offset + i + 1}</span>
+      <span>
+        <span class="span-text">…${esc(sp.text)}…</span>
+        <span class="bar"><i class="${sign > 0 ? "toward" : "away"}" style="width:${Math.abs(sp.w) * 100}%"></i></span>
+        <span class="bar-meta"><span>${sign > 0 ? "toward" : "away from"} unreliable</span><span class="num">${sp.w.toFixed(2)}</span></span>
+      </span></button></li>`).join("");
+  return `<section class="group ${sign > 0 ? "toward" : "away"}">
+    <h3><span class="swatch"></span>${label} · ${spans.length}</h3>
+    <p class="note">${sign > 0 ? framing.toward : framing.away}</p>
+    <ol class="list">${rows}</ol>
+  </section>`;
+}
+
 function VariantB() {
   if (isError()) return `<div class="B"><div class="wrap">${errorHTML()}</div></div>`;
   const b = bandOf(state.score), st = statementFor(state.score);
-  const spans = hasAttr() ? topSpans(7) : [];
-  const list = spans.map((s, i) => `
-    <li><button class="item" data-span="${s.idx}" aria-pressed="${state.selectedSpan === s.idx}">
-      <span class="rank num">${i + 1}</span>
-      <span>
-        <span class="span-text">…${esc(s.text)}…</span>
-        <span class="bar"><i class="${s.w > 0 ? "toward" : "away"}" style="width:${Math.abs(s.w) * 50}%"></i></span>
-        <span class="bar-meta"><span>${s.w > 0 ? "toward unreliable" : "away from unreliable"}</span><span class="num">${s.w.toFixed(2)}</span></span>
-      </span></button></li>`).join("");
+  const framing = B_FRAMING[b.key];
+  const ready = hasAttr();
+  const toward = ready ? spansBySign(1, 6) : [];
+  const away = ready ? spansBySign(-1, 6) : [];
+  const ordered = ready ? [...toward, ...away] : [];
+  const heads = new Set(ordered.map(sp => sp.idx));
+  const pos = state.selectedSpan ? ordered.findIndex(sp => sp.idx === state.selectedSpan.idx) : -1;
+  const netToward = toward.reduce((a, sp) => a + sp.w, 0);
+  const netAway = away.reduce((a, sp) => a + Math.abs(sp.w), 0);
+
+  const body = ready
+    ? `<div class="navbar">
+         <button data-step="-1" ${pos <= 0 ? "disabled" : ""}>‹ Prev</button>
+         <button data-step="1" ${pos >= ordered.length - 1 ? "disabled" : ""}>Next ›</button>
+         <span><kbd>j</kbd> <kbd>k</kbd> or <kbd>↑</kbd> <kbd>↓</kbd> to step, <kbd>Esc</kbd> to clear</span>
+         <span class="pos">${pos >= 0 ? `${pos + 1} / ${ordered.length}` : `${ordered.length} passages`}</span>
+       </div>
+       ${bGroupHTML(toward, 1, framing, 0)}
+       ${bGroupHTML(away, -1, framing, toward.length)}
+       <p class="balance">Net pull toward <span class="num">${netToward.toFixed(2)}</span> against
+         <span class="num">${netAway.toFixed(2)}</span> the other way.
+         ${b.key === "inconclusive" ? "Close to balanced — which is exactly what the middle band records." : ""}</p>`
+    : state.mode === "attr_failed"
+      ? `<p class="waiting">No passages to show — the attribution run did not finish.
+           <em>The band above still stands. But you cannot check its reasoning here, which is a reason to weight it less.</em></p>`
+      : `<p class="waiting">Nothing to list yet — step ${state.igStep} of ${IG_STEPS}.
+           <em>Integrated Gradients makes every attribution valid at the same moment, so there is no honest
+           partial ranking to show you along the way.</em></p>`;
+
   return `<div class="B"><div class="wrap">
-    <div class="head">
-      <div>
-        <div class="brand">FactLens · screening aid</div>
-        <h1 style="margin:6px 0 0; font-size:22px">${b.name}</h1>
+    <div class="masthead">
+      <div class="head">
+        <div>
+          <div class="brand">FactLens · screening aid</div>
+          <h1 style="margin:6px 0 0; font-size:22px">${b.name}</h1>
+        </div>
+        <div style="flex:1 1 420px; max-width:520px">${bandScaleHTML(state.score)}</div>
       </div>
-      <div style="flex:1 1 420px; max-width:520px">${bandScaleHTML(state.score)}</div>
+      <p class="statement" style="margin:10px 0 0">${st.core}${st.hedge ? `<span class="hedge">${st.hedge}</span>` : ""}</p>
+      ${bCalibStripHTML(state.score)}
     </div>
-    <p class="statement" style="margin:0 0 6px">${st.core}${st.hedge ? `<span class="hedge">${st.hedge}</span>` : ""}</p>
-    ${scoreDisclosureHTML(state.score)}
-    <div style="margin:16px 0 22px">${progressHTML()}</div>
+    <div style="margin:0 0 20px">${progressHTML()}</div>
     <div class="cols">
-      <section class="findings">
-        <header>
-          <h2>Passages that moved the score</h2>
-          <p class="sub">Ranked by how far each shifted it. These are patterns in wording — not claims the model believes are false.</p>
-        </header>
-        ${hasAttr() ? `<ol class="list">${list}</ol>`
-          : `<p style="padding:16px; margin:0; color:var(--ink-faint)">${state.mode === "attr_failed" ? "Unavailable — the attribution run did not finish." : "Computing…"}</p>`}
-      </section>
+      <div class="panel-stack">
+        <section class="findings">
+          <header>
+            <h2>${framing.h}</h2>
+            <p class="sub">${framing.sub}</p>
+          </header>
+          ${body}
+        </section>
+      </div>
       <section class="reader">
         <h2 style="margin:0 0 2px; font-size:19px; font-family:Georgia,serif">${ARTICLE_HEADLINE}</h2>
         <p style="color:var(--ink-faint); font-size:13px; margin:0 0 18px">Your pasted text · never stored</p>
-        <div class="article" style="font-size:16.5px">${articleHTML(hasAttr(), state.selectedSpan)}</div>
-        <div style="margin-top:22px">${labelGapHTML(false)}</div>
+        <div class="article" style="font-size:16.5px">${articleHTML(ready, state.selectedSpan, heads)}</div>
       </section>
     </div>
   </div></div>`;
@@ -636,6 +762,38 @@ function render() {
   document.getElementById("vkey").textContent = k;
   document.getElementById("vname").textContent = VARIANTS[k].title;
   document.title = `FactLens result view — ${k}: ${VARIANTS[k].title} (PROTOTYPE)`;
+  revealSelection();
+}
+
+/* The list drives the reader through the article: bring the selected passage into view and
+   put focus on it, so keyboard and screen-reader users travel with the highlight (NFR-10). */
+function revealSelection() {
+  if (!state.selectedSpan || !state.scrollPending) return;
+  state.scrollPending = false;
+  const el = document.getElementById("tok-" + state.selectedSpan.idx);
+  if (!el) return;
+  el.scrollIntoView({ behavior: "smooth", block: "center" });
+  el.focus({ preventScroll: true });
+}
+
+/* Ordered as rendered: toward-group first, then away-group. */
+function orderedSpans() {
+  return hasAttr() ? [...spansBySign(1, 6), ...spansBySign(-1, 6)] : [];
+}
+
+function selectSpan(sp) {
+  state.selectedSpan = sp ? { idx: sp.idx, w: sp.w } : null;
+  state.scrollPending = !!sp;
+  render();
+}
+
+function stepSelection(delta) {
+  const list = orderedSpans();
+  if (!list.length) return;
+  const at = state.selectedSpan ? list.findIndex(sp => sp.idx === state.selectedSpan.idx) : -1;
+  const next = at === -1 ? (delta > 0 ? 0 : list.length - 1)
+                         : Math.min(list.length - 1, Math.max(0, at + delta));
+  selectSpan(list[next]);
 }
 
 document.getElementById("prev").onclick = () => setVariant(KEYS[(KEYS.indexOf(currentKey()) + KEYS.length - 1) % KEYS.length]);
@@ -643,8 +801,12 @@ document.getElementById("next").onclick = () => setVariant(KEYS[(KEYS.indexOf(cu
 addEventListener("keydown", e => {
   const t = e.target;
   if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
-  if (e.key === "ArrowLeft") document.getElementById("prev").click();
-  if (e.key === "ArrowRight") document.getElementById("next").click();
+  if (e.key === "ArrowLeft") { document.getElementById("prev").click(); return; }
+  if (e.key === "ArrowRight") { document.getElementById("next").click(); return; }
+  if (currentKey() !== "B") return;
+  if (e.key === "j" || e.key === "ArrowDown") { e.preventDefault(); stepSelection(1); }
+  if (e.key === "k" || e.key === "ArrowUp") { e.preventDefault(); stepSelection(-1); }
+  if (e.key === "Escape") selectSpan(null);
 });
 
 document.getElementById("ctl-score").oninput = e => {
@@ -661,8 +823,15 @@ document.getElementById("ctl-state").onchange = e => {
 document.getElementById("ctl-replay").onclick = () => { document.getElementById("ctl-state").value = "complete"; replay(); };
 
 document.addEventListener("click", e => {
+  const step = e.target.closest("[data-step]");
+  if (step) { stepSelection(+step.dataset.step); return; }
   const item = e.target.closest("button.item");
-  if (item) { const i = +item.dataset.span; state.selectedSpan = state.selectedSpan === i ? null : i; render(); return; }
+  if (item) {
+    const idx = +item.dataset.span;
+    const same = state.selectedSpan && state.selectedSpan.idx === idx;
+    selectSpan(same ? null : { idx, w: +item.dataset.w });
+    return;
+  }
   const tab = e.target.closest("[data-tab]");
   if (tab) { state.tab = tab.dataset.tab; render(); }
 });
