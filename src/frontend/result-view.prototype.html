@@ -189,7 +189,7 @@
   .B .calib-links { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 12px; }
   .B .calib-links details.disc { margin-top: 0; }
   .B .cols { display: grid; grid-template-columns: 430px minmax(0,1fr); gap: 36px; align-items: start; }
-  .B .panel-stack { display: grid; gap: 18px; position: sticky; top: 18px; }
+  .B .panel-stack { display: grid; gap: 18px; position: sticky; top: 18px; max-height: calc(100vh - 36px); overflow-y: auto; }
   .B .findings { border: 1px solid var(--rule); border-radius: 10px; background: var(--panel); overflow: hidden; }
   .B .findings > header { padding: 14px 16px; border-bottom: 1px solid var(--rule); }
   .B .findings h2 { margin: 0; font-size: 15px; }
@@ -211,19 +211,23 @@
   .B ol.list { list-style: none; margin: 0; padding: 0; }
   .B ol.list li { border-top: 1px solid var(--rule-soft); }
   .B ol.list button.item {
-    display: grid; grid-template-columns: 24px 1fr; gap: 12px; width: 100%; text-align: left;
+    display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 12px; width: 100%; text-align: left;
     background: none; border: 0; padding: 11px 16px; color: inherit; border-left: 3px solid transparent;
   }
+  /* These rows are built from <span>s inside a <button>; an inline box ignores height and
+     block margins, so each one has to be blockified or the bar collapses onto the text. */
+  .B ol.list button.item > span { min-width: 0; }
+  .B .span-text { display: block; overflow-wrap: anywhere; }
   .B ol.list button.item:hover { background: #f6f6f2; }
   .B ol.list button.item[aria-pressed="true"] { background: #f1eef8; border-left-color: var(--toward); }
   .B .group.away ol.list button.item[aria-pressed="true"] { background: #eaf2f5; border-left-color: var(--away); }
   .B .rank { color: var(--ink-faint); font-size: 13px; padding-top: 3px; font-variant-numeric: tabular-nums; }
-  .B .span-text { font-family: Georgia, serif; font-size: 15px; }
-  .B .bar { margin-top: 7px; height: 6px; background: var(--rule-soft); border-radius: 3px; overflow: hidden; }
+  .B .span-text { font-family: Georgia, serif; font-size: 15px; line-height: 1.5; }
+  .B .bar { display: block; margin-top: 8px; height: 6px; background: var(--rule-soft); border-radius: 3px; overflow: hidden; }
   .B .bar i { display: block; height: 100%; border-radius: 3px; }
   .B .bar i.toward { background: var(--toward); }
   .B .bar i.away { background: var(--away); }
-  .B .bar-meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-faint); margin-top: 4px; }
+  .B .bar-meta { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; line-height: 1.4; color: var(--ink-faint); margin-top: 5px; }
   .B .waiting { padding: 18px 16px; margin: 0; color: var(--ink-faint); font-size: 14px; }
   .B .waiting em { color: var(--ink-soft); font-style: normal; display: block; margin-top: 8px; font-size: 13px; }
   .B .balance { padding: 12px 16px; font-size: 13px; color: var(--ink-soft); background: #f8f8f4; border-top: 1px solid var(--rule-soft); }
