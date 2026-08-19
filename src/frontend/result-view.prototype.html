@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FactLens — result view PROTOTYPE (#12)</title>
+<!--
+  THROWAWAY PROTOTYPE — wayfinder ticket #12. Not production code, no build step.
+  Question: what does a reader see after submitting an Article Text, and does it hold the
+  "Screening Aid, not a truth verdict" line under pressure?
+
+  Three variants of the result view, switchable via ?variant= and the floating bottom bar:
+    A — Marked reading pass  : the Article Text is the page; attributions sit inline over it.
+    B — Findings panel       : ranked list of contributing passages is primary; text is reference.
+    C — Calibration dossier  : what the number means comes first; the text is behind a tab.
+
+  Constraints being tested (docs/requirements.md):
+    FR-14 no bare Credibility Score, Verdict Band primary, number behind explicit expansion
+    FR-15 bands phrased as reader actions
+    FR-16 inconclusive band equal visual weight
+    FR-17 Label Gap + honest figures within one interaction
+    FR-18 no red/green traffic-light coding
+    FR-5/7/8 Fast Path first, Attribution Job streams in
+    FR-10 attribution failure still renders the Assessment
+    FR-13 six distinct named failure states
+    NFR-11 attribution strength carried by a channel besides colour
+  Band boundaries here are PLACEHOLDERS; the real ones come from calibration in task 4 (FR-6).
+-->
+<style>
+  :root {
+    --ink: #16161a;
+    --ink-soft: #4a4a55;
+    --ink-faint: #74747f;
+    --paper: #fbfbf9;
+    --panel: #ffffff;
+    --rule: #ddddd6;
+    --rule-soft: #ececE4;
+    /* Deliberately NOT red/green (FR-18). One hue carries "toward unreliable",
+       a second, unrelated hue carries "away from unreliable". Neither is a stoplight. */
+    --toward: #6d3f9e;
+    --toward-wash: rgba(109, 63, 158, 0.16);
+    --away: #1f6f8b;
+    --away-wash: rgba(31, 111, 139, 0.14);
+    --proto: #b8520a;
+    --focus: #1f6f8b;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+    padding-bottom: 96px;
+  }
+  a { color: var(--away); }
+  :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  button { font: inherit; cursor: pointer; }
+
+  /* ---------- prototype chrome (obviously not part of the design) ---------- */
+  .proto-bar {
+    background: repeating-linear-gradient(135deg, #fff4e8, #fff4e8 12px, #ffe9d4 12px, #ffe9d4 24px);
+    border-bottom: 2px dashed var(--proto);
+    color: #7a3a06; padding: 10px 16px; font-size: 13px;
+    display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center;
+  }
+  .proto-bar strong { letter-spacing: .06em; text-transform: uppercase; font-size: 11px; }
+  .proto-bar label { display: inline-flex; align-items: center; gap: 6px; }
+  .proto-bar select, .proto-bar input[type=range] { font: inherit; }
+  .proto-bar button {
+    background: #fff; border: 1px solid var(--proto); color: #7a3a06;
+    border-radius: 5px; padding: 3px 10px; font-size: 13px;
+  }
+  .switcher {
+    position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 4px; z-index: 50;
+    background: #16161a; color: #fff; border-radius: 999px; padding: 6px 8px;
+    box-shadow: 0 8px 28px rgba(0,0,0,.32);
+  }
+  .switcher button {
+    background: transparent; border: 0; color: #fff; font-size: 18px; line-height: 1;
+    padding: 8px 12px; border-radius: 999px;
+  }
+  .switcher button:hover { background: rgba(255,255,255,.16); }
+  .switcher .label { padding: 0 12px; font-size: 13px; white-space: nowrap; }
+  .switcher .label b { font-weight: 700; }
+
+  /* ---------- shared bits ---------- */
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 28px 24px 0; }
+  .brand { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); }
+  .disclose {
+    background: none; border: 0; padding: 0; color: var(--away);
+    text-decoration: underline; text-underline-offset: 3px; font-size: 14px;
+  }
+  .num {
+    font-variant-numeric: tabular-nums;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  details.disc { margin-top: 10px; }
+  details.disc > summary {
+    cursor: pointer; color: var(--away); font-size: 14px; width: fit-content;
+    text-decoration: underline; text-underline-offset: 3px;
+  }
+  details.disc > summary::-webkit-details-marker { display: none; }
+  .disc-body {
+    margin-top: 10px; padding: 12px 14px; background: var(--panel);
+    border: 1px solid var(--rule); border-radius: 8px; font-size: 14px; color: var(--ink-soft);
+  }
+  .disc-body dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; }
+  .disc-body dt { color: var(--ink-faint); }
+  .disc-body dd { margin: 0; }
+
+  /* band scale — all three bands always rendered at equal weight (FR-16) */
+  .bands { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .bands li {
+    border: 1px solid var(--rule); background: var(--panel); border-radius: 7px;
+    padding: 10px 12px; font-size: 13.5px; color: var(--ink-faint);
+  }
+  .bands li[aria-current="true"] {
+    border-color: var(--ink); color: var(--ink); background: #fff;
+    box-shadow: inset 0 0 0 1px var(--ink);
+  }
+  .bands li .mark { display: block; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); }
+  .bands li[aria-current="true"] .mark { color: var(--ink); }
+
+  .statement { font-size: 15px; color: var(--ink-soft); max-width: 62ch; }
+  .hedge { font-style: italic; }
+
+  /* attribution rendering — colour is never the only channel (NFR-11) */
+  mark.tok {
+    background: transparent; color: inherit; padding: 0 1px; border-radius: 2px;
+    text-decoration-line: underline; text-underline-offset: 4px; cursor: help;
+  }
+  mark.tok.t1 { background: var(--toward-wash); text-decoration-color: var(--toward); text-decoration-thickness: 1px; }
+  mark.tok.t2 { background: var(--toward-wash); text-decoration-color: var(--toward); text-decoration-thickness: 2px; }
+  mark.tok.t3 { background: var(--toward-wash); text-decoration-color: var(--toward); text-decoration-thickness: 3px; font-weight: 600; }
+  mark.tok.a1 { text-decoration-style: dotted; text-decoration-color: var(--away); text-decoration-thickness: 1px; }
+  mark.tok.a2 { background: var(--away-wash); text-decoration-style: dotted; text-decoration-color: var(--away); text-decoration-thickness: 2px; }
+  mark.tok.a3 { background: var(--away-wash); text-decoration-style: dotted; text-decoration-color: var(--away); text-decoration-thickness: 3px; }
+  mark.tok:focus-visible { outline: 3px solid var(--focus); }
+  .legend { font-size: 13px; color: var(--ink-soft); display: grid; gap: 8px; }
+  .legend .row { display: flex; gap: 8px; align-items: baseline; }
+
+  .article { font-family: Georgia, "Iowan Old Style", serif; font-size: 18px; line-height: 1.72; }
+  .article p { margin: 0 0 1.05em; }
+  .headline { font-family: Georgia, serif; font-size: 26px; line-height: 1.25; margin: 0 0 4px; }
+
+  .progress { font-size: 13px; color: var(--ink-faint); display: flex; align-items: center; gap: 10px; }
+  .progress .track { flex: 1; height: 4px; background: var(--rule-soft); border-radius: 2px; overflow: hidden; max-width: 220px; }
+  .progress .fill { height: 100%; background: var(--ink-faint); }
+
+  .notice {
+    border: 1px solid var(--rule); border-left: 4px solid var(--ink-faint);
+    background: var(--panel); padding: 12px 14px; border-radius: 6px;
+    font-size: 14px; color: var(--ink-soft);
+  }
+  .errcard {
+    max-width: 62ch; margin: 40px auto; background: var(--panel);
+    border: 1px solid var(--rule); border-radius: 10px; padding: 22px 24px;
+  }
+  .errcard h2 { margin: 0 0 8px; font-size: 20px; }
+  .errcard .code {
+    font-family: ui-monospace, Menlo, monospace; font-size: 12px; letter-spacing: .04em;
+    color: var(--ink-faint); border: 1px solid var(--rule); border-radius: 4px;
+    padding: 2px 6px; display: inline-block; margin-bottom: 12px;
+  }
+  .errcard p { margin: 0 0 10px; color: var(--ink-soft); font-size: 15px; }
+
+  /* ---------- variant A ---------- */
+  .A .strip {
+    position: sticky; top: 0; z-index: 20; background: rgba(251,251,249,.96);
+    backdrop-filter: blur(6px); border-bottom: 1px solid var(--rule); padding: 14px 0;
+  }
+  .A .strip-inner { max-width: 1180px; margin: 0 auto; padding: 0 24px; display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+  .A .verdict { font-size: 21px; font-weight: 650; margin: 0 0 4px; }
+  .A .cols { display: grid; grid-template-columns: minmax(0,1fr) 260px; gap: 44px; margin-top: 28px; }
+  .A .rail { position: sticky; top: 120px; align-self: start; display: grid; gap: 18px; font-size: 13.5px; }
+  .A .rail h3 { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); margin: 0 0 8px; }
+  @media (max-width: 900px) { .A .cols { grid-template-columns: 1fr; } .A .rail { position: static; } }
+
+  /* ---------- variant B ---------- */
+  .B .head { display: flex; justify-content: space-between; align-items: baseline; gap: 20px; flex-wrap: wrap; margin-bottom: 18px; }
+  .B .cols { display: grid; grid-template-columns: 420px minmax(0,1fr); gap: 36px; align-items: start; }
+  .B .findings { display: grid; gap: 0; border: 1px solid var(--rule); border-radius: 10px; background: var(--panel); overflow: hidden; }
+  .B .findings header { padding: 14px 16px; border-bottom: 1px solid var(--rule); }
+  .B .findings h2 { margin: 0; font-size: 15px; }
+  .B .findings p.sub { margin: 4px 0 0; font-size: 13px; color: var(--ink-faint); }
+  .B ol.list { list-style: none; margin: 0; padding: 0; }
+  .B ol.list li { border-bottom: 1px solid var(--rule-soft); }
+  .B ol.list button.item {
+    display: grid; grid-template-columns: 22px 1fr; gap: 12px; width: 100%; text-align: left;
+    background: none; border: 0; padding: 12px 16px; color: inherit;
+  }
+  .B ol.list button.item:hover { background: #f6f6f2; }
+  .B ol.list button.item[aria-pressed="true"] { background: #f1eef8; }
+  .B .rank { color: var(--ink-faint); font-size: 13px; padding-top: 2px; }
+  .B .span-text { font-family: Georgia, serif; font-size: 15px; }
+  .B .bar { margin-top: 7px; height: 6px; background: var(--rule-soft); border-radius: 3px; position: relative; }
+  .B .bar i { position: absolute; top: 0; bottom: 0; border-radius: 3px; }
+  .B .bar i.toward { background: var(--toward); left: 50%; }
+  .B .bar i.away { background: var(--away); right: 50%; }
+  .B .bar-meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-faint); margin-top: 4px; }
+  .B .reader { border: 1px solid var(--rule); border-radius: 10px; background: var(--panel); padding: 24px 28px; }
+  .B .reader mark.sel { box-shadow: 0 0 0 3px #d9cff0; border-radius: 3px; }
+  @media (max-width: 980px) { .B .cols { grid-template-columns: 1fr; } }
+
+  /* ---------- variant C ---------- */
+  .C .sheet { max-width: 760px; margin: 0 auto; }
+  .C .lede { font-size: 25px; line-height: 1.4; font-weight: 500; margin: 18px 0 14px; }
+  .C .calib { border: 1px solid var(--rule); background: var(--panel); border-radius: 10px; padding: 18px 20px; margin: 22px 0; }
+  .C .calib h3 { margin: 0 0 10px; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); }
+  .C .dots { display: grid; grid-template-columns: repeat(20, 1fr); gap: 3px; margin: 12px 0 10px; max-width: 420px; }
+  .C .dots span { aspect-ratio: 1; border-radius: 2px; background: var(--rule); }
+  .C .dots span.on { background: var(--toward); }
+  .C .gap { border-left: 3px solid var(--ink); padding: 2px 0 2px 16px; margin: 22px 0; }
+  .C .gap h3 { margin: 0 0 6px; font-size: 15px; }
+  .C .gap p { margin: 0 0 8px; font-size: 14.5px; color: var(--ink-soft); }
+  .C .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--rule); margin: 30px 0 0; }
+  .C .tabs button {
+    background: none; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px;
+    padding: 10px 16px; color: var(--ink-faint); font-size: 14.5px;
+  }
+  .C .tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); font-weight: 600; }
+  .C .tabpanel { padding: 24px 0 0; }
+  .C figure { margin: 0; }
+  .C table.fig { border-collapse: collapse; font-size: 14px; width: 100%; }
+  .C table.fig th, .C table.fig td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--rule-soft); }
+  .C table.fig th { color: var(--ink-faint); font-weight: 500; }
+</style>
+</head>
+<body>
+
+<div class="proto-bar">
+  <strong>Prototype · ticket #12</strong>
+  <label>Credibility Score
+    <input id="ctl-score" type="range" min="0" max="100" value="78" step="1">
+    <span id="ctl-score-val" class="num">0.78</span>
+  </label>
+  <label>State
+    <select id="ctl-state">
+      <option value="complete">complete</option>
+      <option value="fastpath">Fast Path only (attributions running)</option>
+      <option value="attr_failed">attributions unavailable (FR-10)</option>
+      <option value="TEXT_TOO_SHORT">TEXT_TOO_SHORT</option>
+      <option value="TEXT_TOO_LONG">TEXT_TOO_LONG</option>
+      <option value="LANGUAGE_UNSUPPORTED">LANGUAGE_UNSUPPORTED</option>
+      <option value="MODEL_UNAVAILABLE">MODEL_UNAVAILABLE</option>
+      <option value="TIMEOUT">TIMEOUT</option>
+      <option value="QUEUE_FULL">QUEUE_FULL</option>
+    </select>
+  </label>
+  <button id="ctl-replay">▶ Replay arrival (SSE sequence)</button>
+  <span id="ctl-note">score/state are simulated — no model here</span>
+</div>
+
+<main id="root"></main>
+
+<nav class="switcher" aria-label="Prototype variant switcher">
+  <button id="prev" aria-label="Previous variant">‹</button>
+  <span class="label"><b id="vkey">A</b> — <span id="vname"></span></span>
+  <button id="next" aria-label="Next variant">›</button>
+</nav>
+
+<script>
+/* ============================ mock data ============================ */
+
+const ARTICLE_HEADLINE = "Officials Refuse To Say What Really Happened At The Riverside Facility";
+
+const ARTICLE = `Local authorities have still not explained the unprecedented activity observed at the
+Riverside processing facility last Tuesday, despite mounting pressure from residents who say they were
+never warned. What they are not telling you is that the site had been flagged twice in the previous
+eighteen months, according to documents that officials have so far declined to release.
+
+A spokesperson for the county said in a written statement that the incident remains under review and
+that a summary of findings will be published once the assessment is complete. The statement did not
+address whether residents had been notified in advance, or how the earlier flags were resolved.
+
+Residents interviewed near the perimeter described an acrid smell that lingered through the evening.
+Two of them said they had contacted the county hotline and received no callback. County records show
+seven calls logged that night. The shocking truth, some argue, is that nobody in the chain of command
+considered the neighbourhood worth a phone call.
+
+Independent monitoring data published by the regional environmental board on Thursday showed readings
+within permitted limits at both fixed stations, though neither station sits closer than two kilometres
+to the facility. The board noted that its network was not designed to characterise short-duration
+events of this kind and recommended additional sampling before conclusions are drawn.`;
+
+/* Hand-weighted markers: register cues an unreliability model plausibly latches onto (positive =
+   toward unreliable), and markers of sourced, hedged reporting (negative = away). */
+const HEAVY = {
+  "refuse": .74, "refused": .70, "really": .55, "unprecedented": .81, "shocking": .93,
+  "truth": .66, "never": .48, "nobody": .52, "mounting": .58, "declined": .40,
+  "what": .35, "you": .62, "telling": .59, "argue": .44, "still": .33,
+  "according": -.62, "documents": -.45, "statement": -.58, "records": -.66, "data": -.71,
+  "published": -.55, "monitoring": -.60, "recommended": -.52, "noted": -.49, "review": -.38,
+  "assessment": -.41, "logged": -.57, "limits": -.44, "board": -.35, "independent": -.53
+};
+
+function seeded(i) { const x = Math.sin(i * 12.9898) * 43758.5453; return (x - Math.floor(x)) * 2 - 1; }
+const strip = w => w.toLowerCase().replace(/[^a-z]/g, "");
+
+const TOKENS = ARTICLE.split(/(\s+)/).filter(s => s.length).map((raw, i) => {
+  if (/^\s+$/.test(raw)) return { raw, ws: true, w: 0 };
+  const key = strip(raw);
+  const w = HEAVY[key] !== undefined ? HEAVY[key] : seeded(i) * 0.22;
+  return { raw, ws: false, w, i };
+});
+
+/* Contiguous spans of consecutive high-|w| tokens, ranked — variant B's primary object. */
+function topSpans(limit) {
+  const words = TOKENS.filter(t => !t.ws);
+  const spans = [];
+  for (let i = 0; i < words.length; i++) {
+    if (Math.abs(words[i].w) < .33) continue;
+    const start = Math.max(0, i - 3), end = Math.min(words.length, i + 4);
+    const text = words.slice(start, end).map(t => t.raw).join(" ");
+    spans.push({ text, w: words[i].w, head: words[i].raw, idx: words[i].i });
+    i += 3;
+  }
+  return spans.sort((a, b) => Math.abs(b.w) - Math.abs(a.w)).slice(0, limit);
+}
+
+/* ============================ bands ============================ */
+/* PLACEHOLDER boundaries — FR-6 derives the real ones from calibrated scores on the validation split. */
+const BANDS = [
+  { key: "reliable",     name: "Nothing here to flag",  hint: "read as you normally would" },
+  { key: "inconclusive", name: "Inconclusive",          hint: "this tool cannot help you either way" },
+  { key: "check",        name: "Worth checking",        hint: "verify the claims before relying on it" }
+];
+function bandOf(s) { return s < .35 ? BANDS[0] : (s <= .70 ? BANDS[1] : BANDS[2]); }
+
+/* Language degrades toward the boundary: near an edge the statement says so out loud. */
+function nearEdge(s) { return Math.min(Math.abs(s - .35), Math.abs(s - .70)) < .06; }
+
+function statementFor(s) {
+  const b = bandOf(s);
+  const edge = nearEdge(s);
+  let core;
+  if (b.key === "check") {
+    core = "This text carries a number of the stylistic patterns the model associates with " +
+           "publications that have weak editorial standards. That is a reason to check the claims, " +
+           "not a finding that any of them are false.";
+  } else if (b.key === "inconclusive") {
+    core = "The model does not separate this text from either group. Most texts land here, and that " +
+           "is the tool working as designed rather than failing — it means the signal it reads is not " +
+           "decisive for this piece.";
+  } else {
+    core = "This text does not carry the patterns the model associates with weak editorial standards. " +
+           "That says something about how it is written, and nothing about whether its claims are true.";
+  }
+  const hedge = edge
+    ? " This score sits close to a band boundary, so a small change in wording could move it into the " +
+      "neighbouring band. Treat the band as approximate."
+    : "";
+  return { core, hedge };
+}
+
+/* Honest evaluation figures — FR-17 keeps these within one interaction. */
+const HONEST = [
+  ["F1, unreliable class", "0.57", "in-distribution, reported by the corpus authors"],
+  ["MCC, uniform split", "0.46", "same publishers in train and test"],
+  ["MCC, publisher-disjoint", "0.37", "unseen publishers — the honest number"],
+  ["Label agreement", "43.5%", "share of articles from 'unreliable' publishers that are clearly non-credible"]
+];
+const LABEL_GAP = "The model was trained on the reputation of the publisher an article came from, not " +
+  "on whether the article is true. In a hand-check of the corpus, only 43.5% of articles from " +
+  "publishers labelled unreliable were clearly non-credible. A high score means 'this reads like that " +
+  "kind of publication' — nothing stronger.";
+
+/* ============================ simulated arrival ============================ */
+
+const state = { score: .78, mode: "complete", igStep: 32, timer: null, selectedSpan: null, tab: "text" };
+const IG_STEPS = 32;
+
+function replay() {
+  clearInterval(state.timer);
+  state.mode = "accepted"; state.igStep = 0; render();
+  setTimeout(() => {
+    if (state.mode !== "accepted") return;
+    state.mode = "fastpath"; render();
+    state.timer = setInterval(() => {
+      state.igStep += 2;
+      if (state.igStep >= IG_STEPS) { clearInterval(state.timer); state.igStep = IG_STEPS; state.mode = "complete"; }
+      render();
+    }, 130);
+  }, 700);
+}
+
+const hasAttr = () => state.mode === "complete";
+const isError = () => /^[A-Z_]+$/.test(state.mode);
+
+/* ============================ shared fragments ============================ */
+
+const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+function bandScaleHTML(score) {
+  const cur = bandOf(score).key;
+  return `<ul class="bands">` + BANDS.map(b => `
+    <li aria-current="${b.key === cur}">
+      <span class="mark">${b.key === cur ? "this text" : "&nbsp;"}</span>
+      <strong>${b.name}</strong><br><span style="font-size:12.5px">${b.hint}</span>
+    </li>`).join("") + `</ul>`;
+}
+
+/* FR-14: the number exists but is never rendered until the reader asks for it. */
+function scoreDisclosureHTML(score) {
+  return `<details class="disc"><summary>Show the underlying number and how it was produced</summary>
+    <div class="disc-body">
+      <dl>
+        <dt>Credibility Score</dt><dd class="num">${score.toFixed(3)}</dd>
+        <dt>Band boundaries</dt><dd class="num">0.35 / 0.70 <span style="color:var(--ink-faint)">(from calibration, not fixed in code)</span></dd>
+        <dt>Calibration</dt><dd>temperature scaling; reliability diagram in the thesis</dd>
+        <dt>Reads as</dt><dd>of texts scored near ${score.toFixed(2)}, about ${Math.round(score * 100)} in 100 came from a publisher labelled unreliable</dd>
+      </dl>
+    </div></details>`;
+}
+
+function honestTableHTML() {
+  return `<table class="fig"><tbody>` + HONEST.map(r =>
+    `<tr><th>${r[0]}</th><td class="num">${r[1]}</td><td style="color:var(--ink-faint)">${r[2]}</td></tr>`
+  ).join("") + `</tbody></table>`;
+}
+
+function labelGapHTML(open) {
+  return `<details class="disc" ${open ? "open" : ""}><summary>What the model was actually trained on (the Label Gap)</summary>
+    <div class="disc-body"><p style="margin-top:0">${LABEL_GAP}</p>${honestTableHTML()}</div></details>`;
+}
+
+function legendHTML() {
+  return `<div class="legend">
+    <div class="row"><mark class="tok t3">solid, heavy</mark><span>pushed the score toward "unreliable"</span></div>
+    <div class="row"><mark class="tok a3">dotted</mark><span>pushed it away</span></div>
+    <div class="row"><span style="color:var(--ink-faint)">Thickness carries strength; focus or hover any word for its number. Colour is never the only channel.</span></div>
+  </div>`;
+}
+
+function cls(w) {
+  const a = Math.abs(w);
+  const lvl = a > .6 ? 3 : a > .42 ? 2 : a > .3 ? 1 : 0;
+  if (!lvl) return null;
+  return (w > 0 ? "t" : "a") + lvl;
+}
+
+function articleHTML(withAttr, selectedIdx) {
+  let out = "";
+  for (const t of TOKENS) {
+    if (t.ws) { out += t.raw.includes("\n\n") ? "</p><p>" : esc(t.raw); continue; }
+    const c = withAttr ? cls(t.w) : null;
+    if (!c) { out += esc(t.raw); continue; }
+    const sel = selectedIdx !== null && Math.abs(t.i - selectedIdx) <= 3 ? " sel" : "";
+    out += `<mark class="tok ${c}${sel}" tabindex="0" title="${t.w > 0 ? "toward unreliable" : "away from unreliable"} · ${t.w.toFixed(2)}">${esc(t.raw)}</mark>`;
+  }
+  return "<p>" + out + "</p>";
+}
+
+function progressHTML() {
+  if (state.mode === "accepted") return `<div class="progress"><span>Submitted — scoring…</span></div>`;
+  if (state.mode === "fastpath") {
+    const pct = Math.round(state.igStep / IG_STEPS * 100);
+    return `<div class="progress">
+      <span>Working out which words drove this — step ${state.igStep} of ${IG_STEPS}</span>
+      <span class="track"><span class="fill" style="width:${pct}%"></span></span></div>`;
+  }
+  if (state.mode === "attr_failed") {
+    return `<div class="notice"><strong>The assessment above stands; the word-level explanation does not.</strong>
+      The attribution run timed out, so this page cannot show you which words drove the score. Nothing about the
+      band changed — but you also cannot check its reasoning, which is a reason to weight it less.</div>`;
+  }
+  return "";
+}
+
+/* FR-13 — each failure is its own named state with its own remedy, never a generic error. */
+const ERRORS = {
+  TEXT_TOO_SHORT: ["Too short to assess", "This text is under 100 words. The model reads writing style, and there is not enough of it here to read. This is not a low score — it is no score at all.", "Paste the full article body and try again."],
+  TEXT_TOO_LONG: ["Longer than the model can read", "This text exceeds the 8192-token context window (around 6000 words). It was not assessed. Cutting it short would produce a score for a piece of the article while showing you the whole one, so the system refuses instead.", "Submit a section at a time."],
+  LANGUAGE_UNSUPPORTED: ["This model only reads English", "The text appears not to be in English. An English-trained model will still return a number for it, and that number would be noise, so nothing is shown.", "Polish support is named future work, not a degraded mode."],
+  MODEL_UNAVAILABLE: ["The model is not loaded", "The service is up but the model is not ready to answer. No assessment was produced.", "This usually clears within a minute of a restart."],
+  TIMEOUT: ["Gave up after 120 seconds", "The assessment did not finish inside the hard time limit and was stopped. Inference here is deterministic, so it is not retried automatically — a retry would reproduce the same failure at twice the cost.", "Resubmit if you want to try again."],
+  QUEUE_FULL: ["Busy — nothing was queued", "One text is assessed at a time and the queue is full. Your text was not accepted, so nothing is running in the background.", "Try again in a moment."]
+};
+
+function errorHTML() {
+  const e = ERRORS[state.mode];
+  return `<div class="errcard">
+    <div class="code">${state.mode}</div>
+    <h2>${e[0]}</h2><p>${e[1]}</p><p style="color:var(--ink-faint)">${e[2]}</p>
+    <p style="margin-top:18px"><a href="#" onclick="return false">Assess a different text</a></p></div>`;
+}
+
+/* ============================ variant A — marked reading pass ============================ */
+/* The Article Text is the page. The Assessment is a slim persistent strip above it; the reader's
+   primary act is re-reading their own article with the model's marks on it. */
+VariantA.title = "Marked reading pass";
+function VariantA() {
+  if (isError()) return `<div class="A">${errorHTML()}</div>`;
+  const b = bandOf(state.score), st = statementFor(state.score);
+  const showAttr = hasAttr();
+  return `<div class="A">
+    <div class="strip">
+      <div class="strip-inner">
+        <div style="flex:1 1 380px">
+          <div class="brand">FactLens · screening aid</div>
+          <p class="verdict">${b.name}</p>
+          <p class="statement" style="margin:0">${st.core}${st.hedge ? `<span class="hedge">${st.hedge}</span>` : ""}</p>
+          ${scoreDisclosureHTML(state.score)}
+        </div>
+        <div style="flex:0 1 420px; min-width:280px">
+          ${bandScaleHTML(state.score)}
+          <div style="margin-top:10px">${progressHTML()}</div>
+        </div>
+      </div>
+    </div>
+    <div class="wrap"><div class="cols">
+      <article>
+        <h1 class="headline">${ARTICLE_HEADLINE}</h1>
+        <p style="color:var(--ink-faint); font-size:13.5px; margin:0 0 22px">Your pasted text · 268 words · not stored anywhere</p>
+        <div class="article">${articleHTML(showAttr, null)}</div>
+      </article>
+      <aside class="rail">
+        <div><h3>Reading the marks</h3>${showAttr ? legendHTML() : `<p style="color:var(--ink-faint);margin:0">Marks appear once the attribution run finishes.</p>`}</div>
+        <div><h3>Before you trust this</h3>${labelGapHTML(false)}</div>
+      </aside>
+    </div></div></div>`;
+}
+
+/* ============================ variant B — findings panel ============================ */
+/* The ranked passages are the primary object; the article is reference material beside them.
+   Structurally the opposite of A: you work a list, you do not read a page. */
+VariantB.title = "Findings panel";
+function VariantB() {
+  if (isError()) return `<div class="B"><div class="wrap">${errorHTML()}</div></div>`;
+  const b = bandOf(state.score), st = statementFor(state.score);
+  const spans = hasAttr() ? topSpans(7) : [];
+  const list = spans.map((s, i) => `
+    <li><button class="item" data-span="${s.idx}" aria-pressed="${state.selectedSpan === s.idx}">
+      <span class="rank num">${i + 1}</span>
+      <span>
+        <span class="span-text">…${esc(s.text)}…</span>
+        <span class="bar"><i class="${s.w > 0 ? "toward" : "away"}" style="width:${Math.abs(s.w) * 50}%"></i></span>
+        <span class="bar-meta"><span>${s.w > 0 ? "toward unreliable" : "away from unreliable"}</span><span class="num">${s.w.toFixed(2)}</span></span>
+      </span></button></li>`).join("");
+  return `<div class="B"><div class="wrap">
+    <div class="head">
+      <div>
+        <div class="brand">FactLens · screening aid</div>
+        <h1 style="margin:6px 0 0; font-size:22px">${b.name}</h1>
+      </div>
+      <div style="flex:1 1 420px; max-width:520px">${bandScaleHTML(state.score)}</div>
+    </div>
+    <p class="statement" style="margin:0 0 6px">${st.core}${st.hedge ? `<span class="hedge">${st.hedge}</span>` : ""}</p>
+    ${scoreDisclosureHTML(state.score)}
+    <div style="margin:16px 0 22px">${progressHTML()}</div>
+    <div class="cols">
+      <section class="findings">
+        <header>
+          <h2>Passages that moved the score</h2>
+          <p class="sub">Ranked by how far each shifted it. These are patterns in wording — not claims the model believes are false.</p>
+        </header>
+        ${hasAttr() ? `<ol class="list">${list}</ol>`
+          : `<p style="padding:16px; margin:0; color:var(--ink-faint)">${state.mode === "attr_failed" ? "Unavailable — the attribution run did not finish." : "Computing…"}</p>`}
+      </section>
+      <section class="reader">
+        <h2 style="margin:0 0 2px; font-size:19px; font-family:Georgia,serif">${ARTICLE_HEADLINE}</h2>
+        <p style="color:var(--ink-faint); font-size:13px; margin:0 0 18px">Your pasted text · never stored</p>
+        <div class="article" style="font-size:16.5px">${articleHTML(hasAttr(), state.selectedSpan)}</div>
+        <div style="margin-top:22px">${labelGapHTML(false)}</div>
+      </section>
+    </div>
+  </div></div>`;
+}
+
+/* ============================ variant C — calibration dossier ============================ */
+/* What the number means comes first and the Label Gap is open by default; the text and its marks
+   sit behind a tab. Structurally: epistemics before evidence. */
+VariantC.title = "Calibration dossier";
+function VariantC() {
+  if (isError()) return `<div class="C"><div class="wrap">${errorHTML()}</div></div>`;
+  const b = bandOf(state.score), st = statementFor(state.score);
+  const n = Math.round(state.score * 100);
+  const dots = Array.from({ length: 100 }, (_, i) => `<span class="${i < n ? "on" : ""}"></span>`).join("");
+  const spans = hasAttr() ? topSpans(5) : [];
+  const panel = state.tab === "text"
+    ? `<div class="tabpanel">
+         ${hasAttr() ? legendHTML() : `<p style="color:var(--ink-faint)">${state.mode === "attr_failed" ? "Attributions unavailable." : "Computing attributions…"}</p>`}
+         <div class="article" style="margin-top:18px; font-size:17px">${articleHTML(hasAttr(), null)}</div></div>`
+    : state.tab === "spans"
+    ? `<div class="tabpanel">${hasAttr()
+         ? `<ol style="padding-left:20px">${spans.map(s => `<li style="margin-bottom:12px"><span class="span-text" style="font-family:Georgia,serif">…${esc(s.text)}…</span><br><span style="font-size:13px;color:var(--ink-faint)">${s.w > 0 ? "toward" : "away from"} unreliable · <span class="num">${s.w.toFixed(2)}</span></span></li>`).join("")}</ol>`
+         : `<p style="color:var(--ink-faint)">Not available yet.</p>`}</div>`
+    : `<div class="tabpanel"><figure>${honestTableHTML()}
+         <figcaption style="font-size:13.5px;color:var(--ink-soft);margin-top:14px;max-width:60ch">
+         These are the model's own numbers on texts from publishers it has never seen. The gap between the
+         two MCC rows is the part of its apparent skill that came from recognising familiar outlets rather
+         than from anything about the writing.</figcaption></figure></div>`;
+  return `<div class="C"><div class="wrap"><div class="sheet">
+    <div class="brand">FactLens · screening aid</div>
+    <p class="lede">${b.name} — ${st.core}${st.hedge ? `<span class="hedge">${st.hedge}</span>` : ""}</p>
+    ${bandScaleHTML(state.score)}
+    <div class="calib">
+      <h3>What a score in this range has meant so far</h3>
+      <div class="dots" aria-hidden="true">${dots}</div>
+      <p style="margin:0; font-size:14.5px; color:var(--ink-soft)">
+        On the validation split, about <strong class="num">${n} in 100</strong> texts scored near this level came from a
+        publisher labelled unreliable. That is a statement about publishers, not about this article's claims.</p>
+      ${scoreDisclosureHTML(state.score)}
+    </div>
+    <div class="gap">
+      <h3>The Label Gap</h3>
+      <p>${LABEL_GAP}</p>
+    </div>
+    <div style="margin:20px 0">${progressHTML()}</div>
+    <div class="tabs" role="tablist">
+      <button role="tab" aria-selected="${state.tab === "text"}" data-tab="text">Your text, marked</button>
+      <button role="tab" aria-selected="${state.tab === "spans"}" data-tab="spans">Top passages</button>
+      <button role="tab" aria-selected="${state.tab === "figs"}" data-tab="figs">How well it does this</button>
+    </div>
+    ${panel}
+  </div></div></div>`;
+}
+
+/* ============================ switcher & wiring ============================ */
+
+const VARIANTS = { A: VariantA, B: VariantB, C: VariantC };
+const KEYS = Object.keys(VARIANTS);
+const currentKey = () => {
+  const v = (new URLSearchParams(location.search).get("variant") || "A").toUpperCase();
+  return KEYS.includes(v) ? v : "A";
+};
+function setVariant(k) {
+  const u = new URL(location.href); u.searchParams.set("variant", k);
+  history.replaceState(null, "", u); render();
+}
+
+function render() {
+  const k = currentKey();
+  document.getElementById("root").innerHTML = VARIANTS[k]();
+  document.getElementById("vkey").textContent = k;
+  document.getElementById("vname").textContent = VARIANTS[k].title;
+  document.title = `FactLens result view — ${k}: ${VARIANTS[k].title} (PROTOTYPE)`;
+}
+
+document.getElementById("prev").onclick = () => setVariant(KEYS[(KEYS.indexOf(currentKey()) + KEYS.length - 1) % KEYS.length]);
+document.getElementById("next").onclick = () => setVariant(KEYS[(KEYS.indexOf(currentKey()) + 1) % KEYS.length]);
+addEventListener("keydown", e => {
+  const t = e.target;
+  if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+  if (e.key === "ArrowLeft") document.getElementById("prev").click();
+  if (e.key === "ArrowRight") document.getElementById("next").click();
+});
+
+document.getElementById("ctl-score").oninput = e => {
+  state.score = e.target.value / 100;
+  document.getElementById("ctl-score-val").textContent = state.score.toFixed(2);
+  render();
+};
+document.getElementById("ctl-state").onchange = e => {
+  clearInterval(state.timer);
+  state.mode = e.target.value;
+  state.igStep = state.mode === "complete" ? IG_STEPS : 12;
+  render();
+};
+document.getElementById("ctl-replay").onclick = () => { document.getElementById("ctl-state").value = "complete"; replay(); };
+
+document.addEventListener("click", e => {
+  const item = e.target.closest("button.item");
+  if (item) { const i = +item.dataset.span; state.selectedSpan = state.selectedSpan === i ? null : i; render(); return; }
+  const tab = e.target.closest("[data-tab]");
+  if (tab) { state.tab = tab.dataset.tab; render(); }
+});
+
+render();
+</script>
+</body>
+</html>
