@@ -12,4 +12,5 @@ The five canonical triage roles, each label string equal to its name. See `docs/
 
 ### Domain docs
 
-Single-context — one `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+Three Bounded Contexts — Corpus, Training, Screening — mapped in `CONTEXT-MAP.md`, with one
+root `CONTEXT.md` and `docs/adr/` until #10 settles the package layout. See `docs/agents/domain.md`.
