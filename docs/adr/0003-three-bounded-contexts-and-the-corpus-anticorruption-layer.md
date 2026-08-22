@@ -76,3 +76,63 @@ The contexts are deliberately **not** yet separate directories. `src/` is laid o
 target package layout is [#10](https://github.com/aoleszkiewicz/factlens/issues/10), still open;
 splitting the glossary into per-context files before then would mean guessing paths and moving them
 again.
+
+## Amendments
+
+The reasoning above is left as it was decided. These entries record where it has since changed, and
+why — the decisions, not the deliberation, are what `CONTEXT-MAP.md` reflects.
+
+### 2026-08-21 — Corpus → Training is Customer/Supplier, not Shared Kernel
+
+The consequences section drew this border as a Shared Kernel. That was the wrong pattern. A Shared
+Kernel is a model **either side may change**, which is why it imposes a standing two-way veto and is
+the most expensive relationship in DDD. Nothing in this design lets Training author a Split Manifest
+or redefine Label Semantics: Corpus produces both, Training consumes them and asserts before an
+epoch runs. The obligation runs one way.
+
+**Customer/Supplier** says exactly that, and costs less. Training is not a Conformist either — its
+needs are a budgeted obligation on Corpus's plan, not something it works around.
+
+The failure the border exists to prevent is unchanged, and so is the assertion that prevents it.
+
+### 2026-08-21 — the Corpus/Training split is a lifecycle boundary, not a language boundary
+
+The option list above records the Corpus-and-Training-as-one-context alternative as *"a defensible
+call: their languages do not actually conflict"*. That is now checked rather than asserted: no term
+means two different things across that border. Every shared term is identical, and every unshared
+term is simply absent on the other side.
+
+So the split is a deliberate compromise — a context boundary drawn on a lifecycle-and-deliverable
+seam rather than on a meaning seam — and it is kept for the reason originally given. Recording it
+plainly matters, so that a reader does not assume the languages were believed to conflict.
+
+The border that *does* carry a meaning conflict is Corpus↔Screening: **Unreliable Content** is a
+property of the Publisher in one and a property of the text in the other. That conflict is now
+visible as two glossary entries under the same name, which is where the argument for drawing more
+than one box actually lives.
+
+### 2026-08-21 — Training realises a Generic subdomain
+
+This ADR presents all three contexts as peers without classifying the problem space. `CONTEXT-MAP.md`
+now carries a subdomain table, and Training's row reads **Generic**: a standard fine-tune of an
+upstream checkpoint plus one scalar of temperature scaling. Nothing in it is specific to FactLens.
+
+Generic does not mean unimportant, and it does not mean the box goes away — Training remains a
+Bounded Context and a required part of the system's lifecycle. It means the thinking is not spent
+there. The two things that make the evaluation numbers trustworthy both sit upstream: the Split
+Manifest that Corpus authors, and the Label Gap that Corpus measures.
+
+Conceding this strengthens the thesis rather than weakening it. The likeliest challenge — *"you
+fine-tuned a transformer, so did everyone"* — is answered by agreeing, and pointing at where the
+work actually is.
+
+### 2026-08-21 — the map does constrain the code layout
+
+The opening of this ADR says the map exists *"to make the thesis's central claim visible rather than
+to organise code."* That sentence was written to answer the ceremony charge — five boxes over
+roughly 800 lines of Python — and it overcorrected.
+
+Both purposes hold. The map makes the claim visible **and** it constrains the package layout: the
+strategic model is settled first precisely so that the tactical refactor in
+[#10](https://github.com/aoleszkiewicz/factlens/issues/10) has something to be refactored *toward*.
+Read the original sentence as a rejection of maps drawn from tiers, not as a disclaimer of purpose.

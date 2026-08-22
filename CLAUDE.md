@@ -4,7 +4,9 @@
 
 ### Issue tracker
 
-Issues live as GitHub issues in `aoleszkiewicz/factlens`, managed via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+GitHub issues in `aoleszkiewicz/factlens`, via the `gh` CLI. Work is tracked in Scrum form — EPIC →
+US → TASK as native sub-issues — on the kanban board at `users/aoleszkiewicz/projects/1`, where you
+set a card's status as the work moves. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
