@@ -1,109 +1,125 @@
 # FactLens
 
-A screening system that assesses how strongly a piece of internet text exhibits the characteristics
-of unreliable content, and shows the reader which parts of the text drove that assessment.
+A screening system that assesses how strongly a text exhibits the characteristics of unreliable
+content, and shows the reader which parts of the text drove that assessment.
 
-## Language
+## How to read this glossary
 
-Terms are grouped by the Bounded Context that owns them — see [`CONTEXT-MAP.md`](./CONTEXT-MAP.md).
+- Terms are grouped by the Bounded Context that owns them. The boundaries are in
+  [`CONTEXT-MAP.md`](./CONTEXT-MAP.md).
+- **Framing** and **Kernel** are the two declared exceptions: terms owned by no single context.
+- Terms marked _Supplied to Training_ are owned by Corpus and consumed by Training. Only Corpus
+  may change them.
+- **Unreliable Content** is defined twice, differently, under Corpus and under Screening. The
+  distance between the two definitions is the **Label Gap**
+  ([ADR-0001](docs/adr/0001-credibility-assessment-not-truth-verdict.md)).
 
-A Ubiquitous Language belongs to *one* context. Two groups below are the exceptions, and both are
-declared rather than incidental: **Framing** holds terms owned by no context, and **Kernel** holds
-the one term all three contexts must mean identically.
+---
 
-**Unreliable Content** appears twice, under Corpus and under Screening, with different definitions.
-That is not an error to be tidied away. The distance between those two entries is the **Label Gap**,
-and naming it is what this project is for ([ADR-0001](docs/adr/0001-credibility-assessment-not-truth-verdict.md)).
-
-### Framing — owned by no context
+## Framing — owned by no context
 
 **Disinformation**:
-False information deliberately created and spread to deceive. The concept named by the thesis title
-— and, critically, **not** what any corpus label encodes. FactLens never claims to detect it
-directly.
+False information created and spread deliberately to deceive. Named by the thesis title; encoded by
+no corpus label, and never claimed as a direct output.
 _Avoid_: Fake news, misinformation, hoax
 
 **Screening Aid**:
-The role FactLens is designed to occupy — a tool that directs a reader's attention toward text worth
-checking. It is explicitly not an arbiter of truth, and the interface is built to keep that
-distinction visible. What a Credibility Score is *for*, as distinct from what it is *of*.
+The role the system occupies — directing a reader's attention toward text worth checking, rather
+than arbitrating truth. What a Credibility Score is *for*, as opposed to what it is *of*.
 
-### Kernel — shared by Corpus, Training and Screening
+---
+
+## Kernel — shared by Corpus, Training and Screening
 
 **Label Gap**:
-The distance between what a corpus label encodes (publisher provenance, a fact-checker's verdict, a
-crowd rating) and Disinformation as the thesis title names it. Every corpus has one; FactLens
-measures and states its own rather than hiding it. A property of the corpus, not of any one article
-— the same figure for every Assessment ever produced from a given Model Artifact.
+The distance between what a corpus label encodes and Disinformation as the title names it. A
+property of the corpus, so the same figure applies to every Assessment from a given Model Artifact.
 
-Corpus measures it, Training publishes it inside the Model Artifact, Screening states it to the
-reader. All three must mean the same distance and the same number by it; a change on any side is a
-change on all three.
+| Context | Responsibility |
+|---|---|
+| Corpus | Measures it |
+| Training | Publishes it inside the Model Artifact |
+| Screening | States it to the reader |
 
-### The corpus — Corpus
+All three must mean the same distance and the same number. A change on one side is a change on all
+three.
 
-Terms marked _Supplied to Training_ are owned here and consumed downstream: Corpus is the upstream
-Supplier, Training the downstream Customer. Only Corpus may change them.
+---
+
+## Corpus
 
 **Publisher**:
-The organisation that issued an article. The unit a Source-Disjoint Split partitions on, and — in
-`misinfo-general` — the thing the corpus label actually describes.
+The organisation that issued an article. The unit a Source-Disjoint Split partitions on, and the
+thing the `misinfo-general` label describes.
 _Avoid_: Source, domain, site, author
 
 **Unreliable Content** _(Corpus sense)_:
-An article issued by a Publisher on the corpus's unreliable list. A property of the **Publisher**,
-not of the article's text: 43.5% of such articles in `misinfo-general` are clearly non-credible, and
-the remainder are the Label Gap. Compare the Screening entry of the same name.
+An article issued by a Publisher on the corpus's unreliable list. A property of the Publisher, not
+of the text — 43.5% of such articles in `misinfo-general` are clearly non-credible, and the
+remainder is the Label Gap.
 _Avoid_: Fake, false, untrue
 
 **Label Semantics** _(Supplied to Training)_:
-What a given corpus's label actually encodes — publisher provenance, a fact-checker's verdict on one
-claim, or the newsroom of origin. Declared by the Corpus Adapter that supplies it, never assumed.
+What a corpus's label encodes: publisher provenance, a fact-checker's verdict on one claim, or the
+newsroom of origin. Declared by the Corpus Adapter, never assumed.
 _Avoid_: Ground truth, target, class meaning
 
 **Corpus Adapter**:
-A translation of one external corpus into FactLens's own model, carrying that corpus's Label
-Semantics and Label Gap across the border with it.
+A translation of one external corpus into the system's own model, carrying that corpus's Label
+Semantics and Label Gap with it.
 _Avoid_: Loader, dataset, reader
 
+**Normalisation Contract** _(Supplied to Training)_:
+The reduction that turns raw input into Article Text — whitespace, markup, casing, and what the
+tokeniser is fed. Authored by Corpus because Corpus produces the text a model is fitted on, and
+carried onward in the Model Artifact so Screening applies it identically.
+_Avoid_: Cleaning, preprocessing, sanitisation
+
+**Publisher De-identification** _(Supplied to Training)_:
+The removal of Publisher-identifying spans from an article, limited to declared structural
+categories: datelines, wire attributions, image credits and site self-references. Necessary hygiene
+and demonstrably insufficient on its own — the ISOT Contrast Experiment still reaches F1 ≈ 0.99 with
+these spans removed. Distinct from the Normalisation Contract in both purpose and ownership.
+_Avoid_: Masking, anonymisation, scrubbing
+
 **Source-Disjoint Split** _(Supplied to Training)_:
-A partition of a corpus in which no Publisher appears in more than one of the training, validation
-and test sets. Forces generalisation to unseen outlets, rather than to a familiar house style.
+A partition in which no Publisher appears in more than one of the train, validation and test sets.
+Forces generalisation to unseen outlets rather than to a familiar house style.
 _Avoid_: Random split, stratified split
 
 **Split Manifest** _(Supplied to Training)_:
 The Publisher-to-fold assignment that fixes a Source-Disjoint Split. Produced once, and asserted
-against before any training run — the agreement that keeps the split from being silently undone.
+against before any training run.
 _Avoid_: Split config, fold map, seed
 
 **Register Leakage**:
 The failure in which a classifier separates classes by recognising a Publisher's editorial
-conventions — datelines, wire-service phrasing, image-credit templates — rather than by anything
-about the content. The reason a saturated benchmark score is a warning rather than a result.
+conventions — datelines, wire phrasing, image-credit templates — rather than the content.
 _Avoid_: Overfitting, data leakage, bias
 
 **Contrast Experiment**:
-A deliberately flawed evaluation kept and reported because its failure is informative — in FactLens,
-the ISOT result, retained to demonstrate what Register Leakage does to a benchmark.
+An evaluation kept and reported because its failure is informative. Here: the ISOT result — F1 ≈ 0.99
+from TF-IDF + logistic regression, measured **after** Publisher De-identification, on a
+label-stratified rather than source-disjoint split.
 
-### Building the model — Training
+---
+
+## Training
 
 **Fine-tuning**:
-The supervised pass that adapts pre-trained ModernBERT weights to a corpus's labels. Adopted
-wholesale from the upstream — standard objective, standard loop, nothing about it specific to
-FactLens.
+The supervised pass that adapts pre-trained ModernBERT weights to a corpus's labels. Standard
+objective, standard loop.
 _Avoid_: Training, retraining, transfer learning
 
 **Calibration**:
-The adjustment that makes a Credibility Score mean what it claims — so that texts scored 0.8 are
-unreliable roughly 80% of the time. Distinct from accuracy: a model can be accurate and badly
-calibrated. Fitted in Training on the validation fold, and carried into Screening as a temperature
-inside the Model Artifact.
+The adjustment that makes a Credibility Score mean what it claims, so that texts scored 0.8 are
+unreliable roughly 80% of the time. Fitted on the validation fold; carried into Screening as a
+temperature.
 
 **Evaluation Metrics**:
-What is reported for a Model Artifact: MCC and F1 over the unreliable class as the headline figures,
-the Source-Disjoint Gap as the honesty check, and a reliability diagram for Calibration. Accuracy is
-never reported on its own.
+What is reported for a Model Artifact: MCC and F1 over the unreliable class as headline figures, the
+Source-Disjoint Gap as the honesty check, and a reliability diagram for Calibration. Accuracy is
+never reported alone.
 _Avoid_: Accuracy, score, performance
 
 **Source-Disjoint Gap**:
@@ -111,65 +127,76 @@ The drop in a metric between a random split and a Source-Disjoint Split of the s
 of the drop is the size of the Register Leakage.
 _Avoid_: Generalisation gap, overfitting gap
 
-### The boundary — Training to Screening
+---
+
+## Boundary — Training to Screening
 
 **Model Artifact**:
-What Training publishes and Screening consumes, travelling as one unit: the fine-tuned weights, the
-tokeniser, the Calibration temperature, the derived Verdict Band boundaries, and the measured Label
-Gap.
+What Training publishes and Screening consumes, as one unit.
+
+| Contents | |
+|---|---|
+| Fine-tuned weights | |
+| Tokeniser | |
+| Normalisation Contract | defines Article Text |
+| Publisher De-identification categories | structural only, no publisher names |
+| Calibration temperature | |
+| Verdict Band boundaries | derived |
+| Label Gap | measured |
+
 _Avoid_: Checkpoint, model file, weights
 
-### The assessment — Screening
+---
+
+## Screening — the assessment
 
 **Article Text**:
-The body of a piece of internet writing submitted for assessment, stripped of surrounding page
-furniture. The only input the system reasons over.
-_Avoid_: Document, content, input, post
+The body of a text submitted for assessment, stripped of page furniture and reduced by the
+**Normalisation Contract**. The only input the system reasons over. Text reduced any other way falls
+outside the distribution the model was fitted on, and Calibration no longer holds.
+_Avoid_: Document, content, input, post, raw text
 
 **Unreliable Content** _(Screening sense)_:
 Text bearing the stylistic and structural characteristics of publications with poor editorial
-standards. What a Credibility Score is *hoped* to be about — the hope whose cost the Label Gap
-measures and whose failure Register Leakage names. Compare the Corpus entry of the same name.
+standards. What a Credibility Score is hoped to be about.
 _Avoid_: Fake, false, untrue
 
 **Credibility Score**:
 A calibrated probability that an Article Text resembles articles issued by Publishers with poor
-editorial standards — because Publisher provenance is what the corpus label encodes. That is what
-the score is *of*; the Screening Aid role is what it is *for*. Bounded, calibrated, and never
-presented on its own or more strongly than its Verdict Band permits.
+editorial standards. Never presented alone, nor more strongly than its Verdict Band permits.
 _Avoid_: Confidence, truth score, fakeness, probability
 
 **Verdict Band**:
-The qualitative range a Credibility Score falls into, which governs how strongly the interface is
-permitted to phrase the result. The band, not the raw score, is what the reader is meant to act on.
+The qualitative range a Credibility Score falls into, governing how strongly the interface may
+phrase the result. The band, not the raw score, is what the reader acts on.
 _Avoid_: Label, class, prediction, verdict
 
 **Assessment**:
-The complete result of analysing one Article Text: its Credibility Score, its Verdict Band, and its
-Token Attributions. Derived and never mutated. Held only for the lifetime of the reader's session —
-the Article Text it was derived from is never retained at all.
+The complete result of analysing one Article Text: Credibility Score, Verdict Band and Token
+Attributions. Derived once, never mutated, and held only for the reader's session.
 _Avoid_: Result, analysis, report, judgement
 
 **Token Attribution**:
-A signed weight assigned to one token of the Article Text, indicating how much that token pushed the
+A signed weight on one token of the Article Text, indicating how far that token pushed the
 Credibility Score toward or away from the unreliable class.
 _Avoid_: Explanation, importance, highlight, saliency
 
-### The reader's session — Screening
+---
+
+## Screening — the reader's session
 
 **Fast Path**:
-The synchronous half of an assessment — one forward pass yielding a Credibility Score and its
-Verdict Band, answered before any attribution work begins. What the reader sees immediately.
+The synchronous half of an assessment: one forward pass yielding a Credibility Score and its Verdict
+Band, answered before attribution work begins.
 _Avoid_: Quick scan, preview, first pass
 
 **Attribution Job**:
-The asynchronous half — the Integrated Gradients computation that produces Token Attributions,
-costing tens of passes and streamed to the reader as it progresses. Its failure costs the
-explanation but never the Assessment.
+The asynchronous half: the Integrated Gradients computation producing Token Attributions, streamed
+as it progresses. Its failure costs the explanation, never the Assessment.
 _Avoid_: Task, background job, worker
 
 **Ephemeral Store**:
 Where an Assessment waits between its Attribution Job finishing and the reader collecting it. Keyed
-by a hash of the Article Text, bounded by a short TTL, gone on restart — and never holding the
+by a hash of the Article Text, bounded by a short TTL, gone on restart, and never holding the
 Article Text itself.
 _Avoid_: Cache, database, persistence layer
