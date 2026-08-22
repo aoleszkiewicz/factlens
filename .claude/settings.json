@@ -3,5 +3,20 @@
     "commit": "",
     "pr": "",
     "sessionUrl": false
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PROJECT_DIR:-.}/scripts/board_audit_hook.sh\"",
+            "async": true,
+            "timeout": 300,
+            "statusMessage": "Auditing the kanban board"
+          }
+        ]
+      }
+    ]
   }
 }
