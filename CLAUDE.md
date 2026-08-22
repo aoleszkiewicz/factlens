@@ -6,7 +6,10 @@
 
 GitHub issues in `aoleszkiewicz/factlens`, via the `gh` CLI. Work is tracked in Scrum form — EPIC →
 US → TASK as native sub-issues — on the kanban board at `users/aoleszkiewicz/projects/1`, where you
-set a card's status as the work moves. See `docs/agents/issue-tracker.md`.
+set a card's status as the work moves. Three rules the board depends on: `Done` and closing the
+issue are one move; a parent's status is derived from its children, never set by hand; and every
+dependency is a recorded `blocked_by` edge, which keeps `Backlog` meaning "startable". Verify with
+`python3 scripts/board_audit.py`. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
